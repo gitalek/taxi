@@ -1,0 +1,23 @@
+syntax = "proto3";
+option go_package = "github.com/gitalek/taxi/requester/pb";
+package pb;
+
+service Requester {
+  rpc TripMetrics(TripMetricsRequest) returns (TripMetricsResponse) {}
+}
+
+message Point {
+  // todo float? https://www.grpc.io/docs/languages/go/basics/
+  float lat = 1;
+  float lon = 2;
+}
+message TripMetricsRequest {
+  repeated Point coordinates = 1;
+}
+
+message TripMetricsResponse {
+  // todo cpu arch?
+  int32 Distance = 1;
+  int32 Duration = 2;
+  string Err = 3;
+}

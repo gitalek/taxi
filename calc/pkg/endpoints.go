@@ -17,8 +17,15 @@ type Request struct {
 
 // response
 type Response struct {
-	Price int   `json:"price"`
+	Price int    `json:"price"`
 	Err   string `json:"err,omitempty"`
+}
+
+// TripMetrics response
+type tripMetricsResponse struct {
+	Distance int    `json:"distance"`
+	Duration int    `json:"duration"`
+	Err      string `json:"err,omitempty"`
 }
 
 func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
@@ -29,4 +36,3 @@ func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 		return Response{price, ""}, nil
 	}
 }
-
