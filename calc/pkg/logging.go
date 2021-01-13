@@ -23,7 +23,7 @@ type AppLoggingMiddleware struct {
 	Next Service
 }
 
-func (mv AppLoggingMiddleware) TripMetrics(c []Point) (int, int) {
+func (mv AppLoggingMiddleware) TripMetrics(c [][]float64) (int, int, error) {
 	return mv.Next.TripMetrics(c)
 }
 

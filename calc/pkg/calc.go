@@ -1,10 +1,17 @@
 // service business logic
 package calc
 
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
 // service as an interface
 type Service interface {
 	CalculatePrice(int, int) int
-	TripMetrics([]Point) (int, int)
+	TripMetrics([][]float64) (int, int, error)
 }
 
 const (
@@ -13,6 +20,19 @@ const (
 	minuteRate  = 10
 	kmRate      = 20
 )
+
+const apiUrl = ":9091"
+
+type MetricsRequest struct {
+	Coordinates string `json:"coordinates"`
+}
+
+// TripMetrics response
+type MetricsResponse struct {
+	Distance int    `json:"distance"`
+	Duration int    `json:"duration"`
+	Err      string `json:"err,omitempty"`
+}
 
 // implementation of the interface
 type CalcService struct{}
@@ -28,6 +48,40 @@ func (s *CalcService) CalculatePrice(t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*CalcService) TripMetrics(c []Point) (int, int) {
-	return int(c[0].Lat), int(c[1].Lat)
+func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
+	client := &http.Client{}
+	re := MetricsRequest{
+		Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
+	}
+	body, err := json.Marshal(re)
+	if err != nil {
+		fmt.Println("Errored while marshalling")
+		return 0, 0, err
+	}
+	req, _ := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Errored when sending request to the server")
+		return 0, 0, err
+	}
+	defer resp.Body.Close()
+	//resp_body, _ := ioutil.ReadAll(resp.Body)
+
+	var metrics MetricsResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&metrics)
+	if err != nil {
+		fmt.Printf("%#v\n", err)
+	}
+	fmt.Printf("%#v\n", metrics)
+	duration := metrics.Duration
+	dist := metrics.Distance
+	fmt.Printf("Distance -> %#v, duration -> %#v\n", dist, duration)
+	return duration, dist, nil
+
 }
+
+// todo ?
+// ServiceMiddleware is a chainable behaviour modifier for Service
+type ServiceMiddleware func(Service) Service

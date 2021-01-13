@@ -1,24 +1,13 @@
-package calc
+package requester
 
 import (
-	"context"
 	"github.com/go-kit/kit/endpoint"
+	"golang.org/x/net/context"
 )
-
-type Point struct {
-	Lat float64
-	Lon float64
-}
 
 // request
 type Request struct {
-	Coordinates [][]float64
-}
-
-// response
-type Response struct {
-	Price int    `json:"price"`
-	Err   string `json:"err,omitempty"`
+	Coordinates []Point
 }
 
 // TripMetrics response
@@ -28,11 +17,10 @@ type tripMetricsResponse struct {
 	Err      string `json:"err,omitempty"`
 }
 
-func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
+func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(Request)
 		t, d, err := svc.TripMetrics(req.Coordinates)
-		price := svc.CalculatePrice(t, d)
-		return Response{price, ""}, err
+		return tripMetricsResponse{Distance: d, Duration: t, Err: ""}, err
 	}
 }
