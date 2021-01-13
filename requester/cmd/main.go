@@ -30,5 +30,6 @@ func main() {
 		Handler: r,
 	}
 
+	log.Printf("Starting server at port %s\n", port)
 	log.Fatal(server.ListenAndServe())
 }

@@ -4,7 +4,7 @@ package calc
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -21,10 +21,10 @@ const (
 	kmRate      = 20
 )
 
-const apiUrl = ":9091"
+const apiUrl = "http://localhost:9091/tripmetrics"
 
 type MetricsRequest struct {
-	Coordinates string `json:"coordinates"`
+	Coordinates [][]float64 `json:"coordinates"`
 }
 
 // TripMetrics response
@@ -40,6 +40,7 @@ type CalcService struct{}
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
 func (s *CalcService) CalculatePrice(t int, dist int) int {
+	log.Printf("time -> %#v, dist -> %#v\n", t, dist)
 	actualPrice := taxiService + t*minuteRate + dist*kmRate
 	if minPrice >= actualPrice {
 		return minPrice
@@ -51,35 +52,40 @@ func (s *CalcService) CalculatePrice(t int, dist int) int {
 func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
-		Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
+		//Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
+		Coordinates: c,
 	}
 	body, err := json.Marshal(re)
 	if err != nil {
-		fmt.Println("Errored while marshalling")
+		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
-	req, _ := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
+	if err != nil {
+		log.Println("Errored when create request to the server")
+		return 0, 0, err
+	}
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Errored when sending request to the server")
+		log.Println("Errored when sending request to the server")
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
 	//resp_body, _ := ioutil.ReadAll(resp.Body)
+	var b []byte
+	_, _ = resp.Body.Read(b)
+	log.Printf("body: %#v\n", b)
 
 	var metrics MetricsResponse
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&metrics)
 	if err != nil {
-		fmt.Printf("%#v\n", err)
+		log.Printf("Errored while decoding: %#v\n", err)
 	}
-	fmt.Printf("%#v\n", metrics)
 	duration := metrics.Duration
 	dist := metrics.Distance
-	fmt.Printf("Distance -> %#v, duration -> %#v\n", dist, duration)
 	return duration, dist, nil
-
 }
 
 // todo ?

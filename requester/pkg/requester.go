@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -34,23 +36,23 @@ type Point struct {
 
 // service as an interface
 type Service interface {
-	TripMetrics([]Point) (int, int, error)
+	TripMetrics([][]float64) (int, int, error)
 }
 
 // implementation of the interface
 type RequesterService struct{}
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*RequesterService) TripMetrics(c []Point) (int, int, error) {
+func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
-		Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0].Lat, c[0].Lon, c[1].Lat, c[1].Lon),
+		Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
 		Language:    "ru",
 		Units:       "m",
 	}
 	body, err := json.Marshal(re)
 	if err != nil {
-		fmt.Println("Errored while marshalling")
+		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
 	req, _ := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
@@ -59,21 +61,22 @@ func (*RequesterService) TripMetrics(c []Point) (int, int, error) {
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Errored when sending request to the server")
+		log.Println("Errored when sending request to the server")
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
-	//resp_body, _ := ioutil.ReadAll(resp.Body)
+	resp_body, _ := ioutil.ReadAll(resp.Body)
+	log.Printf("resp_body: %#v\n", resp_body)
 
 	var metrics MetricsResponse
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&metrics)
 	if err != nil {
-		fmt.Printf("%#v\n", err)
+		log.Printf("TripMetrics: errored while decoding: %#v\n", err)
 	}
-	fmt.Printf("%#v\n", metrics)
+	log.Printf("%#v\n", metrics)
 	duration := metrics.Features[0].Properties.Summary.Duration
 	dist := metrics.Features[0].Properties.Summary.Distance
-	fmt.Printf("Distance -> %#v, duration -> %#v\n", dist, duration)
+	log.Printf("Distance -> %#v, duration -> %#v\n", dist, duration)
 	return int(duration), int(dist), nil
 }
