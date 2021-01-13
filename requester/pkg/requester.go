@@ -3,8 +3,6 @@ package requester
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -21,7 +19,7 @@ type MetricsResponse struct {
 }
 
 type MetricsRequest struct {
-	Coordinates string `json:"coordinates"`
+	Coordinates [][]float64 `json:"coordinates"`
 	Language string `json:"language"`
 	Units string `json:"units"`
 }
@@ -46,7 +44,8 @@ type RequesterService struct{}
 func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
-		Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
+		//Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
+		Coordinates: c,
 		Language:    "ru",
 		Units:       "m",
 	}
@@ -65,8 +64,8 @@ func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
-	resp_body, _ := ioutil.ReadAll(resp.Body)
-	log.Printf("resp_body: %#v\n", resp_body)
+	//resp_body, _ := ioutil.ReadAll(resp.Body)
+	//log.Printf("TripMetrics: resp_body: %#v\n", string(resp_body))
 
 	var metrics MetricsResponse
 	decoder := json.NewDecoder(resp.Body)
