@@ -27,13 +27,14 @@ func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 		req, ok := request.(Request)
 		if !ok {
 			//todo: как обработать ошибку?
-			return nil, errors.New("MakeCalculatePriceEndpoint: error while Request type casting")
+			err = errors.New("MakeCalculatePriceEndpoint: error while Request type casting")
+			return Response{Err: err.Error()}, err
 		}
 		t, d, err := svc.TripMetrics(req.Coordinates)
 		if err != nil {
-			return nil, err
+			return Response{Err: err.Error()}, err
 		}
 		price := svc.CalculatePrice(t, d)
-		return Response{price, ""}, nil
+		return Response{Price: price}, nil
 	}
 }

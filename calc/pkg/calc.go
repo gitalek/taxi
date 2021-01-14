@@ -55,7 +55,6 @@ func (s *CalcService) CalculatePrice(t int, dist int) int {
 func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
-		//Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
 		Coordinates: c,
 	}
 	body, err := json.Marshal(re)
