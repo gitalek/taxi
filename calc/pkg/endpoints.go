@@ -2,6 +2,7 @@ package calc
 
 import (
 	"context"
+	"errors"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -23,7 +24,11 @@ type Response struct {
 
 func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(Request)
+		req, ok := request.(Request)
+		if !ok {
+			//todo: как обработать ошибку?
+			return nil, errors.New("MakeCalculatePriceEndpoint: error while Request type casting")
+		}
 		t, d, err := svc.TripMetrics(req.Coordinates)
 		if err != nil {
 			return nil, err

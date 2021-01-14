@@ -1,6 +1,7 @@
 package requester
 
 import (
+	"errors"
 	"github.com/go-kit/kit/endpoint"
 	"golang.org/x/net/context"
 	"log"
@@ -20,7 +21,11 @@ type tripMetricsResponse struct {
 
 func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(Request)
+		req, ok := request.(Request)
+		if !ok {
+			//todo: как обработать ошибку?
+			return nil, errors.New("MakeTripMetricsEndpoint: error while Request type casting")
+		}
 		log.Printf("TripMetricsEndpoint: request: %#v\n", req)
 		t, d, err := svc.TripMetrics(req.Coordinates)
 		if err != nil {
