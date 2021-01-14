@@ -17,7 +17,7 @@ func main() {
 	//ctx := context.Background()
 	svc := &calc.CalcService{}
 	logger := log.NewLogfmtLogger(os.Stderr)
-	svc_with_log := &calc.AppLoggingMiddleware{logger, svc}
+	svc_with_log := &calc.AppLoggingMiddleware{Logger: logger, Next: svc}
 
 	calculatePrice := calc.MakeCalculatePriceEndpoint(svc_with_log)
 	calculatePrice = calc.LoggingMiddleware(log.With(logger, "method", "calculatePrice"))(calculatePrice)
@@ -45,5 +45,5 @@ func main() {
 	address := fmt.Sprintf(":%s", port)
 	l.Printf("Starting server at port %s\n", port)
 	http.Handle("/", r)
-	http.ListenAndServe(address, nil)
+	l.Fatal(http.ListenAndServe(address, nil))
 }

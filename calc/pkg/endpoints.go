@@ -21,13 +21,6 @@ type Response struct {
 	Err   string `json:"err,omitempty"`
 }
 
-// TripMetrics response
-type tripMetricsResponse struct {
-	Distance int    `json:"distance"`
-	Duration int    `json:"duration"`
-	Err      string `json:"err,omitempty"`
-}
-
 func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(Request)
