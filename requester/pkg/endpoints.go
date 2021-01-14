@@ -23,6 +23,9 @@ func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 		req := request.(Request)
 		log.Printf("TripMetricsEndpoint: request: %#v\n", req)
 		t, d, err := svc.TripMetrics(req.Coordinates)
-		return tripMetricsResponse{Distance: d, Duration: t, Err: ""}, err
+		if err != nil {
+			return nil, err
+		}
+		return tripMetricsResponse{Distance: d, Duration: t, Err: ""}, nil
 	}
 }

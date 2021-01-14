@@ -32,7 +32,10 @@ func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(Request)
 		t, d, err := svc.TripMetrics(req.Coordinates)
+		if err != nil {
+			return nil, err
+		}
 		price := svc.CalculatePrice(t, d)
-		return Response{price, ""}, err
+		return Response{price, ""}, nil
 	}
 }

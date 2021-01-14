@@ -37,6 +37,9 @@ type Service interface {
 	TripMetrics([][]float64) (int, int, error)
 }
 
+// check interface realization
+var _ Service = &RequesterService{}
+
 // implementation of the interface
 type RequesterService struct{}
 
@@ -72,6 +75,7 @@ func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 	err = decoder.Decode(&metrics)
 	if err != nil {
 		log.Printf("TripMetrics: errored while decoding: %#v\n", err)
+		return 0, 0, err
 	}
 	log.Printf("%#v\n", metrics)
 	duration := metrics.Features[0].Properties.Summary.Duration
