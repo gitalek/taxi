@@ -11,6 +11,7 @@ import (
 
 // service as an interface
 type Service interface {
+	Price(context.Context, [][]float64) (int, error)
 	CalculatePrice(context.Context, int, int) int
 	TripMetrics(context.Context, [][]float64) (int, int, error)
 }
@@ -40,6 +41,15 @@ type CalcService struct{}
 
 // check interface realization
 var _ Service = &CalcService{}
+
+func (s CalcService) Price(ctx context.Context, c [][]float64) (int, error) {
+	t, d, err := s.TripMetrics(ctx, c)
+	if err != nil {
+		return 0, err
+	}
+	price := s.CalculatePrice(ctx, t, d)
+	return price, err
+}
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
