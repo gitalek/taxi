@@ -11,9 +11,9 @@ import (
 
 // service as an interface
 type Service interface {
-	Price(context.Context, [][]float64) (int, error)
+	Price(context.Context, []Point) (int, error)
 	CalculatePrice(context.Context, int, int) int
-	TripMetrics(context.Context, [][]float64) (int, int, error)
+	TripMetrics(context.Context, BusinessRequest) (int, int, error)
 }
 
 const (
@@ -25,7 +25,19 @@ const (
 
 const apiUrl = "http://localhost:9091/tripmetrics"
 
-type MetricsRequest struct {
+type BusinessRequest struct {
+	Coordinates []Point
+}
+
+func (r BusinessRequest) ORSRequest() ORSRequest {
+	coordinates := make([][]float64, 0, len(r.Coordinates))
+	for _, point := range r.Coordinates {
+		coordinates = append(coordinates, []float64{point.Lat, point.Lon})
+	}
+	return ORSRequest{coordinates}
+}
+
+type ORSRequest struct {
 	Coordinates [][]float64 `json:"coordinates"`
 }
 
@@ -42,8 +54,9 @@ type CalcService struct{}
 // check interface realization
 var _ Service = &CalcService{}
 
-func (s CalcService) Price(ctx context.Context, c [][]float64) (int, error) {
-	t, d, err := s.TripMetrics(ctx, c)
+func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
+	request := BusinessRequest{c}
+	t, d, err := s.TripMetrics(ctx, request)
 	if err != nil {
 		return 0, err
 	}
@@ -54,7 +67,6 @@ func (s CalcService) Price(ctx context.Context, c [][]float64) (int, error) {
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
 func (s *CalcService) CalculatePrice(ctx context.Context, t int, dist int) int {
-	log.Printf("time -> %#v, dist -> %#v\n", t, dist)
 	actualPrice := taxiService + t*minuteRate + dist*kmRate
 	if minPrice >= actualPrice {
 		return minPrice
@@ -63,12 +75,9 @@ func (s *CalcService) CalculatePrice(ctx context.Context, t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*CalcService) TripMetrics(ctx context.Context, c [][]float64) (int, int, error) {
+func (*CalcService) TripMetrics(ctx context.Context, request BusinessRequest) (int, int, error) {
 	client := &http.Client{}
-	re := MetricsRequest{
-		Coordinates: c,
-	}
-	body, err := json.Marshal(re)
+	body, err := json.Marshal(request.ORSRequest())
 	if err != nil {
 		log.Println("Errored while marshalling")
 		return 0, 0, err
@@ -85,9 +94,6 @@ func (*CalcService) TripMetrics(ctx context.Context, c [][]float64) (int, int, e
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
-	var b []byte
-	_, _ = resp.Body.Read(b)
-	log.Printf("body: %#v\n", b)
 
 	var metrics MetricsResponse
 	decoder := json.NewDecoder(resp.Body)

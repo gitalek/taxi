@@ -4,12 +4,21 @@ import (
 	"errors"
 	"github.com/go-kit/kit/endpoint"
 	"golang.org/x/net/context"
-	"log"
 )
 
 // request
 type Request struct {
 	Coordinates [][]float64 `json:"coordinates"`
+}
+
+// request api v2
+type RequestV2 struct {
+	Coordinates []Point
+}
+
+type Point struct {
+	Lat float64
+	Lon float64
 }
 
 // TripMetrics response
@@ -21,13 +30,11 @@ type tripMetricsResponse struct {
 
 func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req, ok := request.(Request)
+		req, ok := request.(RequestV2)
 		if !ok {
-			//todo: как обработать ошибку?
 			err = errors.New("MakeTripMetricsEndpoint: error while Request type casting")
 			return tripMetricsResponse{Err: err.Error()}, err
 		}
-		log.Printf("TripMetricsEndpoint: request: %#v\n", req)
 		t, d, err := svc.TripMetrics(ctx, req.Coordinates)
 		if err != nil {
 			return tripMetricsResponse{Err: err.Error()}, err
