@@ -3,6 +3,7 @@ package requester
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 )
@@ -37,17 +38,16 @@ type Service interface {
 	TripMetrics([][]float64) (int, int, error)
 }
 
-// check interface realization
-var _ Service = &RequesterService{}
-
 // implementation of the interface
 type RequesterService struct{}
+
+// check interface realization
+var _ Service = &RequesterService{}
 
 // tripMetrics is a temporary stub method until API2 realization
 func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
-		//Coordinates: fmt.Sprintf("[[%f,%f],[%f,%f]]", c[0][0], c[0][1], c[1][0], c[1][1]),
 		Coordinates: c,
 		Language:    "ru",
 		Units:       "m",
@@ -67,8 +67,6 @@ func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
-	//resp_body, _ := ioutil.ReadAll(resp.Body)
-	//log.Printf("TripMetrics: resp_body: %#v\n", string(resp_body))
 
 	var metrics MetricsResponse
 	decoder := json.NewDecoder(resp.Body)
@@ -78,7 +76,11 @@ func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 		return 0, 0, err
 	}
 	log.Printf("%#v\n", metrics)
-	duration := metrics.Features[0].Properties.Summary.Duration
+	if len(metrics.Features) == 0 {
+		return 0, 0, errors.New("no data error") //todo: ввести кастомный тип ошибки?
+	}
+	//todo: проверить наличие свойств по цепочке ".Properties.Summary.Duration"
+	duration:= metrics.Features[0].Properties.Summary.Duration
 	dist := metrics.Features[0].Properties.Summary.Distance
 	log.Printf("Distance -> %#v, duration -> %#v\n", dist, duration)
 	return int(duration), int(dist), nil

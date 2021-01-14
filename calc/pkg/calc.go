@@ -37,6 +37,9 @@ type MetricsResponse struct {
 // implementation of the interface
 type CalcService struct{}
 
+// check interface realization
+var _ Service = &CalcService{}
+
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
 func (s *CalcService) CalculatePrice(t int, dist int) int {

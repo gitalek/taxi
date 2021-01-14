@@ -17,6 +17,7 @@ func main() {
 	//ctx := context.Background()
 	svc := &calc.CalcService{}
 	logger := log.NewLogfmtLogger(os.Stderr)
+	//todo: camelCase
 	svc_with_log := &calc.AppLoggingMiddleware{Logger: logger, Next: svc}
 
 	calculatePrice := calc.MakeCalculatePriceEndpoint(svc_with_log)
