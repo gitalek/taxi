@@ -3,6 +3,7 @@ package calc
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -10,8 +11,8 @@ import (
 
 // service as an interface
 type Service interface {
-	CalculatePrice(int, int) int
-	TripMetrics([][]float64) (int, int, error)
+	CalculatePrice(context.Context, int, int) int
+	TripMetrics(context.Context, [][]float64) (int, int, error)
 }
 
 const (
@@ -42,7 +43,7 @@ var _ Service = &CalcService{}
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
-func (s *CalcService) CalculatePrice(t int, dist int) int {
+func (s *CalcService) CalculatePrice(ctx context.Context, t int, dist int) int {
 	log.Printf("time -> %#v, dist -> %#v\n", t, dist)
 	actualPrice := taxiService + t*minuteRate + dist*kmRate
 	if minPrice >= actualPrice {
@@ -52,7 +53,7 @@ func (s *CalcService) CalculatePrice(t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
+func (*CalcService) TripMetrics(ctx context.Context, c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
 		Coordinates: c,
@@ -62,7 +63,7 @@ func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
 		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
-	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Errored when create request to the server")
 		return 0, 0, err
@@ -74,7 +75,6 @@ func (*CalcService) TripMetrics(c [][]float64) (int, int, error) {
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
-	//resp_body, _ := ioutil.ReadAll(resp.Body)
 	var b []byte
 	_, _ = resp.Body.Read(b)
 	log.Printf("body: %#v\n", b)

@@ -2,6 +2,7 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -35,7 +36,7 @@ type Point struct {
 
 // service as an interface
 type Service interface {
-	TripMetrics([][]float64) (int, int, error)
+	TripMetrics(context.Context, [][]float64) (int, int, error)
 }
 
 // implementation of the interface
@@ -45,7 +46,7 @@ type RequesterService struct{}
 var _ Service = &RequesterService{}
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
+func (*RequesterService) TripMetrics(ctx context.Context, c [][]float64) (int, int, error) {
 	client := &http.Client{}
 	re := MetricsRequest{
 		Coordinates: c,
@@ -57,7 +58,7 @@ func (*RequesterService) TripMetrics(c [][]float64) (int, int, error) {
 		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
-	req, _ := http.NewRequest("POST", apiUrl, bytes.NewBuffer(body))
+	req, _ := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
 	req.Header.Add("Accept", "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8")
 	req.Header.Add("Authorization", authKey)
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
