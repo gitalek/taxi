@@ -8,17 +8,17 @@ import (
 
 // request api v1
 type Request struct {
-	Coordinates [][]float64
+	Coordinates [][]float64 `json:"coordinates"`
 }
 
 // request api v2
 type RequestV2 struct {
-	Coordinates []Point
+	Coordinates []Point `json:"coordinates"`
 }
 
 type Point struct {
-	Lat float64
-	Lon float64
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
 }
 
 // response

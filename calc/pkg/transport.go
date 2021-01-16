@@ -25,11 +25,10 @@ func transformToMessage(req Request) RequestV2 {
 }
 
 func DecodeRequestV2(_ context.Context, r *http.Request) (interface{}, error) {
-	var req Request
+	var req RequestV2
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
-
 	return req, nil
 }
 

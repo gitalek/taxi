@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	calc "github.com/gitalek/taxi/calc/pkg"
+	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	l "log"
@@ -12,22 +13,27 @@ import (
 const port = "9090"
 
 func main() {
-	//ctx := context.Background()
-	svc := &calc.CalcService{}
-	//logger := log.NewLogfmtLogger(os.Stderr)
-	//todo: camelCase
-	//svc_with_log := &calc.AppLoggingMiddleware{Logger: logger, Next: svc}
+	var svc calc.Service
+	svc = &calc.CalcService{}
+	logger := log.NewLogfmtLogger(log.StdlibWriter{})
+	logger = log.WithPrefix(logger, "app", "calc", "layer", "logic")
+	svc = calc.AppLoggingMiddleware{
+		Logger: logger,
+		Next:   svc,
+	}
 
-	//calculatePrice := calc.MakeCalculatePriceEndpoint(svc_with_log)
-	//calculatePrice = calc.LoggingMiddleware(log.With(logger, "method", "calculatePrice"))(calculatePrice)
-	//calculatePriceHandler := calc.MakeHttpHandler(ctx, calculatePrice)
+	logger = log.NewLogfmtLogger(log.StdlibWriter{})
+	calculatePrice := calc.MakeCalculatePriceEndpoint(svc)
+	calculatePrice = calc.LoggingMiddleware(
+		log.WithPrefix(logger, "app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
+	)(calculatePrice)
 
 	r := mux.NewRouter()
 	r.Methods("POST").
 		Path("/calcprice").
 		Handler(
 			httptransport.NewServer(
-				calc.MakeCalculatePriceEndpoint(svc),
+				calculatePrice,
 				calc.DecodeRequest,
 				calc.EncodeResponse,
 			),
@@ -37,18 +43,17 @@ func main() {
 		Path("/v2/calcprice").
 		Handler(
 			httptransport.NewServer(
-				calc.MakeCalculatePriceEndpoint(svc),
+				calculatePrice,
 				calc.DecodeRequestV2,
 				calc.EncodeResponse,
 			),
 		)
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello!")
-	})
-
-	r.HandleFunc("/trip", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "trip page!")
+		_, err := fmt.Fprint(w, "Taxi application")
+		if err != nil {
+			fmt.Printf("calc: handler: '/': error while writing response: %#v\n", err)
+		}
 	})
 
 	address := fmt.Sprintf(":%s", port)

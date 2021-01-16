@@ -12,8 +12,8 @@ import (
 // service as an interface
 type Service interface {
 	Price(context.Context, []Point) (int, error)
-	CalculatePrice(context.Context, int, int) int
-	TripMetrics(context.Context, BusinessRequest) (int, int, error)
+	calculatePrice(context.Context, int, int) int
+	tripMetrics(context.Context, BusinessMessage) (int, int, error)
 }
 
 const (
@@ -25,48 +25,24 @@ const (
 
 const apiUrl = "http://localhost:9091/tripmetrics"
 
-type BusinessRequest struct {
-	Coordinates []Point
-}
-
-func (r BusinessRequest) ORSRequest() ORSRequest {
-	coordinates := make([][]float64, 0, len(r.Coordinates))
-	for _, point := range r.Coordinates {
-		coordinates = append(coordinates, []float64{point.Lat, point.Lon})
-	}
-	return ORSRequest{coordinates}
-}
-
-type ORSRequest struct {
-	Coordinates [][]float64 `json:"coordinates"`
-}
-
-// TripMetrics response
-type MetricsResponse struct {
-	Distance int    `json:"distance"`
-	Duration int    `json:"duration"`
-	Err      string `json:"err,omitempty"`
-}
-
 // implementation of the interface
 type CalcService struct{}
-
 // check interface realization
 var _ Service = &CalcService{}
 
 func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
-	request := BusinessRequest{c}
-	t, d, err := s.TripMetrics(ctx, request)
+	message := BusinessMessage{c}
+	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
 		return 0, err
 	}
-	price := s.CalculatePrice(ctx, t, d)
+	price := s.calculatePrice(ctx, t, d)
 	return price, err
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of kilometers (int)
-func (s *CalcService) CalculatePrice(ctx context.Context, t int, dist int) int {
+func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
 	actualPrice := taxiService + t*minuteRate + dist*kmRate
 	if minPrice >= actualPrice {
 		return minPrice
@@ -75,9 +51,9 @@ func (s *CalcService) CalculatePrice(ctx context.Context, t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*CalcService) TripMetrics(ctx context.Context, request BusinessRequest) (int, int, error) {
+func (*CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (int, int, error) {
 	client := &http.Client{}
-	body, err := json.Marshal(request.ORSRequest())
+	body, err := json.Marshal(message.Request())
 	if err != nil {
 		log.Println("Errored while marshalling")
 		return 0, 0, err
@@ -95,9 +71,9 @@ func (*CalcService) TripMetrics(ctx context.Context, request BusinessRequest) (i
 	}
 	defer resp.Body.Close()
 
-	var metrics MetricsResponse
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&metrics)
+	//var metrics ORSResponse
+	metrics := message.Response()
+	err = json.NewDecoder(resp.Body).Decode(&metrics)
 	if err != nil {
 		log.Printf("Errored while decoding: %#v\n", err)
 	}

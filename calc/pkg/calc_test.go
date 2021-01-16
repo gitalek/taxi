@@ -24,7 +24,7 @@ func TestCalcService_CalculatePrice(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tm, d, want := testCase.Time, testCase.Dist, testCase.Want
 			ctx := context.Background()
-			got := s.CalculatePrice(ctx, tm, d)
+			got := s.calculatePrice(ctx, tm, d)
 			assert.Equal(want, got)
 		})
 	}

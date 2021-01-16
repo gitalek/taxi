@@ -6,13 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// request
 type Request struct {
-	Coordinates [][]float64 `json:"coordinates"`
-}
-
-// request api v2
-type RequestV2 struct {
 	Coordinates []Point
 }
 
@@ -30,7 +24,7 @@ type tripMetricsResponse struct {
 
 func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req, ok := request.(RequestV2)
+		req, ok := request.(Request)
 		if !ok {
 			err = errors.New("MakeTripMetricsEndpoint: error while Request type casting")
 			return tripMetricsResponse{Err: err.Error()}, err

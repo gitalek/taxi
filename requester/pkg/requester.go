@@ -9,35 +9,6 @@ import (
 	"net/http"
 )
 
-type MetricsResponse struct {
-	Features []struct {
-		Properties struct {
-			Summary struct {
-				Distance float64 `json:"distance"`
-				Duration float64 `json:"duration"`
-			} `json:"summary"`
-		} `json:"properties"`
-	} `json:"features"`
-}
-
-type BusinessRequest struct {
-	Coordinates []Point
-}
-
-func (r BusinessRequest) ORSRequest() ORSRequest {
-	coordinates := make([][]float64, 0, len(r.Coordinates))
-	for _, point := range r.Coordinates {
-		coordinates = append(coordinates, []float64{point.Lat, point.Lon})
-	}
-	return ORSRequest{Coordinates: coordinates, Language: "ru", Units: "m"}
-}
-
-type ORSRequest struct {
-	Coordinates [][]float64 `json:"coordinates"`
-	Language string `json:"language"`
-	Units string `json:"units"`
-}
-
 const authKey = "5b3ce3597851110001cf624808fb2d8f3a0048a6b091b55a9da65187"
 const apiUrl = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
 
@@ -48,13 +19,12 @@ type Service interface {
 
 // implementation of the interface
 type RequesterService struct{}
-
 // check interface realization
 var _ Service = &RequesterService{}
 
 // tripMetrics is a temporary stub method until API2 realization
 func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, error) {
-	request := BusinessRequest{c}
+	request := BusinessMessage{c}
 	client := &http.Client{}
 	body, err := json.Marshal(request.ORSRequest())
 	if err != nil {
@@ -72,7 +42,7 @@ func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, 
 	}
 	defer resp.Body.Close()
 
-	var metrics MetricsResponse
+	var metrics ORSResponse
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&metrics)
 	if err != nil {
