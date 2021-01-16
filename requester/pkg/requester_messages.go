@@ -12,14 +12,14 @@ func (r BusinessMessage) ORSRequest() ORSRequest {
 	return ORSRequest{Coordinates: coordinates, Language: "ru", Units: "m"}
 }
 
+func (r BusinessMessage) ORSResponse() ORSResponse {
+	return ORSResponse{}
+}
+
 type ORSRequest struct {
 	Coordinates [][]float64 `json:"coordinates"`
 	Language string `json:"language"`
 	Units string `json:"units"`
-}
-
-func (r BusinessMessage) ORSResponse() ORSResponse {
-	return ORSResponse{}
 }
 
 type ORSResponse struct {
