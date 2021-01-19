@@ -15,17 +15,17 @@ const port = "9090"
 func main() {
 	var svc calc.Service
 	svc = &calc.CalcService{}
-	logger := log.NewLogfmtLogger(log.StdlibWriter{})
-	logger = log.WithPrefix(logger, "app", "calc", "layer", "logic")
+	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
+	loggerSvc = log.WithPrefix(loggerSvc, "app", "calc", "layer", "logic")
 	svc = calc.AppLoggingMiddleware{
-		Logger: logger,
+		Logger: loggerSvc,
 		Next:   svc,
 	}
 
-	logger = log.NewLogfmtLogger(log.StdlibWriter{})
+	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	calculatePrice := calc.MakeCalculatePriceEndpoint(svc)
 	calculatePrice = calc.LoggingMiddleware(
-		log.WithPrefix(logger, "app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
+		log.WithPrefix(loggerEndpoint, "app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
 	)(calculatePrice)
 
 	r := mux.NewRouter()

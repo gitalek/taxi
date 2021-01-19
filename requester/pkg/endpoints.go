@@ -27,11 +27,11 @@ func MakeTripMetricsEndpoint(svc Service) endpoint.Endpoint {
 		req, ok := request.(Request)
 		if !ok {
 			err = errors.New("MakeTripMetricsEndpoint: error while Request type casting")
-			return tripMetricsResponse{Err: err.Error()}, err
+			return tripMetricsResponse{Err: err.Error()}, nil
 		}
 		t, d, err := svc.TripMetrics(ctx, req.Coordinates)
 		if err != nil {
-			return tripMetricsResponse{Err: err.Error()}, err
+			return tripMetricsResponse{Err: err.Error()}, nil
 		}
 		return tripMetricsResponse{Distance: d, Duration: t, Err: ""}, nil
 	}

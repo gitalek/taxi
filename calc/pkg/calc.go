@@ -39,7 +39,7 @@ func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);
-// params: t - number of minutes (int), dist - number of kilometers (int)
+// params: t - number of minutes (int), dist - number of meters (int)
 func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
 	actualPrice := taxiService + t*minuteRate + dist*kmRate
 	if minPrice >= actualPrice {
@@ -74,6 +74,7 @@ func (*CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (i
 	err = json.NewDecoder(resp.Body).Decode(&metrics)
 	if err != nil {
 		log.Printf("Errored while decoding: %#v\n", err)
+		return 0, 0, err
 	}
 	duration := metrics.Duration
 	dist := metrics.Distance

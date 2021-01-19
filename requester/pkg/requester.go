@@ -31,7 +31,11 @@ func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, 
 		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
-	req, _ := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
+	if err != nil {
+		log.Println("Errored when create request to the server")
+		return 0, 0, err
+	}
 	req.Header.Add("Accept", "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8")
 	req.Header.Add("Authorization", authKey)
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")

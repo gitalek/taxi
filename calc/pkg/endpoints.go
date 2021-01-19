@@ -32,11 +32,11 @@ func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 		req, ok := request.(RequestV2)
 		if !ok {
 			err = errors.New("MakeCalculatePriceEndpoint: error while Request type casting")
-			return Response{Err: err.Error()}, err
+			return Response{Err: err.Error()}, nil
 		}
 		price, err := svc.Price(ctx, req.Coordinates)
 		if err != nil {
-			return Response{Err: err.Error()}, err
+			return Response{Err: err.Error()}, nil
 		}
 		return Response{Price: price}, nil
 	}

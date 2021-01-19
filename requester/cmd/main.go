@@ -15,17 +15,17 @@ const port = "9091"
 func main() {
 	var svc requester.Service
 	svc = &requester.RequesterService{}
-	logger := log.NewLogfmtLogger(log.StdlibWriter{})
-	logger = log.WithPrefix(logger, "app", "requester", "layer", "logic")
+	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
+	loggerSvc = log.WithPrefix(loggerSvc, "app", "requester", "layer", "logic")
 	svc = requester.AppLoggingMiddleware{
-		Logger: logger,
+		Logger: loggerSvc,
 		Next:   svc,
 	}
 
-	logger = log.NewLogfmtLogger(log.StdlibWriter{})
+	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	tripMetrics := requester.MakeTripMetricsEndpoint(svc)
 	tripMetrics = requester.LoggingMiddleware(
-		log.WithPrefix(logger, "app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
+		log.WithPrefix(loggerEndpoint, "app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
 	)(tripMetrics)
 
 	r := mux.NewRouter()
