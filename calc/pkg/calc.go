@@ -25,6 +25,7 @@ const apiUrl = "http://localhost:9091/tripmetrics"
 
 // implementation of the interface
 type CalcService struct{}
+
 // check interface realization
 var _ Service = &CalcService{}
 
@@ -41,7 +42,8 @@ func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of meters (int)
 func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
-	actualPrice := taxiService + t*minuteRate + dist*kmRate
+	// todo check number types
+	actualPrice := taxiService + t*minuteRate + (dist * kmRate / 1000)
 	if minPrice >= actualPrice {
 		return minPrice
 	}
@@ -69,13 +71,14 @@ func (*CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (i
 	}
 	defer resp.Body.Close()
 
-	//var metrics ORSResponse
 	metrics := message.Response()
 	err = json.NewDecoder(resp.Body).Decode(&metrics)
 	if err != nil {
 		log.Printf("Errored while decoding: %#v\n", err)
 		return 0, 0, err
 	}
+	// todo check service response struct error
+	// todo multiple points case
 	duration := metrics.Duration
 	dist := metrics.Distance
 	return duration, dist, nil
