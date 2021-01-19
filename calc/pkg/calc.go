@@ -12,8 +12,6 @@ import (
 // service as an interface
 type Service interface {
 	Price(context.Context, []Point) (int, error)
-	calculatePrice(context.Context, int, int) int
-	tripMetrics(context.Context, BusinessMessage) (int, int, error)
 }
 
 const (
