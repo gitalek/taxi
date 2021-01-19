@@ -1,49 +1,23 @@
 package main
 
 import (
-	"fmt"
-	requester "github.com/gitalek/taxi/requester/pkg"
-	"github.com/go-kit/kit/log"
-	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
-	l "log"
-	"net/http"
+	"github.com/gitalek/taxi/requester/config"
+	"github.com/gitalek/taxi/requester/server"
+	"github.com/spf13/viper"
+	"log"
 )
 
-const port = "9091"
-
 func main() {
-	var svc requester.Service
-	svc = &requester.RequesterService{}
-	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
-	loggerSvc = log.WithPrefix(loggerSvc, "app", "requester", "layer", "logic")
-	svc = requester.AppLoggingMiddleware{
-		Logger: loggerSvc,
-		Next:   svc,
+	// reading config data into viper
+	err := config.Init()
+	if err != nil {
+		log.Fatalf("error while reading config: %#v\n", err)
 	}
 
-	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
-	tripMetrics := requester.MakeTripMetricsEndpoint(svc)
-	tripMetrics = requester.LoggingMiddleware(
-		log.WithPrefix(loggerEndpoint, "app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
-	)(tripMetrics)
-
-	r := mux.NewRouter()
-	r.Methods("POST").
-		Path("/tripmetrics").
-		Handler(
-			httptransport.NewServer(
-				tripMetrics,
-				requester.DecodeRequest,
-				requester.EncodeResponse,
-			),
-		)
-
-	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: r,
+	app := server.NewApp()
+	// todo приведение типа?
+	port := viper.GetString("port")
+	if err := app.Run(port); err != nil {
+		log.Fatalf("error while running server: %#v", err.Error())
 	}
-
-	l.Printf("Starting server at port %s\n", port)
-	l.Fatal(server.ListenAndServe())
 }
