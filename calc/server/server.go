@@ -3,9 +3,9 @@ package server
 import (
 	"fmt"
 	calc "github.com/gitalek/taxi/calc/pkg"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	l "log"
 	"net/http"
 )
@@ -16,6 +16,7 @@ type App interface {
 
 // implementation of the interface
 type calcApp struct{}
+
 // check interface realization
 var _ App = &calcApp{}
 
@@ -27,17 +28,16 @@ func NewApp() *calcApp {
 func (a calcApp) Run(port string) error {
 	var svc calc.Service
 	svc = &calc.CalcService{}
-	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
-	loggerSvc = log.WithPrefix(loggerSvc, "app", "calc", "layer", "logic")
+	sugar := zap.NewExample().Sugar().With("app", "calc")
+	defer sugar.Sync()
 	svc = calc.AppLoggingMiddleware{
-		Logger: loggerSvc,
+		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
 	}
 
-	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	calculatePrice := calc.MakeCalculatePriceEndpoint(svc)
 	calculatePrice = calc.LoggingMiddleware(
-		log.WithPrefix(loggerEndpoint, "app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
+		sugar.With("app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
 	)(calculatePrice)
 
 	r := mux.NewRouter()

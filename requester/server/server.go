@@ -3,9 +3,9 @@ package server
 import (
 	"fmt"
 	requester "github.com/gitalek/taxi/requester/pkg"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	l "log"
 	"net/http"
 )
@@ -27,17 +27,16 @@ func NewApp() *requesterApp {
 func (a requesterApp) Run(port string) error {
 	var svc requester.Service
 	svc = &requester.RequesterService{}
-	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
-	loggerSvc = log.WithPrefix(loggerSvc, "app", "requester", "layer", "logic")
+	sugar := zap.NewExample().Sugar().With("app", "requester")
+	defer sugar.Sync()
 	svc = requester.AppLoggingMiddleware{
-		Logger: loggerSvc,
+		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
 	}
 
-	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	tripMetrics := requester.MakeTripMetricsEndpoint(svc)
 	tripMetrics = requester.LoggingMiddleware(
-		log.WithPrefix(loggerEndpoint, "app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
+		sugar.With("app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
 	)(tripMetrics)
 
 	r := mux.NewRouter()
