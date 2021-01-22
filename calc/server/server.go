@@ -1,3 +1,4 @@
+// setting up and running server
 package server
 
 import (
@@ -6,30 +7,52 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-	l "log"
+	"log"
 	"net/http"
 )
 
 type App interface {
-	Run(string) error
+	Run() error
 }
 
 // implementation of the interface
-type calcApp struct{}
-
+type calcApp struct{
+	config AppConfig
+}
 // check interface realization
 var _ App = &calcApp{}
 
-// todo почему нельзя *App ?
-func NewApp() *calcApp {
-	return &calcApp{}
+type AppConfig struct {
+	Port        string
+	ApiUrl      string
+	TaxiService int
+	MinPrice    int
+	MinuteRate  int
+	KmRate      int
 }
 
-func (a calcApp) Run(port string) error {
+// todo почему нельзя *App ?
+func NewApp(config AppConfig) *calcApp {
+	return &calcApp{config: config}
+}
+
+func (a calcApp) Run() error {
 	var svc calc.Service
-	svc = &calc.CalcService{}
+	serviceConfig := calc.ServiceConfig{
+		ApiUrl: a.config.ApiUrl,
+		TaxiService: a.config.TaxiService,
+		MinPrice: a.config.MinPrice,
+		MinuteRate: a.config.MinuteRate,
+		KmRate: a.config.KmRate,
+	}
+	svc = &calc.CalcService{Config: serviceConfig}
 	sugar := zap.NewExample().Sugar().With("app", "calc")
-	defer sugar.Sync()
+	defer func() {
+		err := sugar.Sync()
+		if err != nil {
+			log.Fatalf("error while fleshing zap buffer: %#v\n", err)
+		}
+	}()
 	svc = calc.AppLoggingMiddleware{
 		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
@@ -68,8 +91,8 @@ func (a calcApp) Run(port string) error {
 		}
 	})
 
-	address := fmt.Sprintf(":%s", port)
-	l.Printf("Starting server at port %s\n", port)
+	address := fmt.Sprintf(":%s", a.config.Port)
+	log.Printf("Starting server at port %s\n", a.config.Port)
 	http.Handle("/", r)
 
 	return http.ListenAndServe(address, nil)

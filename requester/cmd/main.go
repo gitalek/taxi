@@ -14,10 +14,14 @@ func main() {
 		log.Fatalf("error while reading config: %#v\n", err)
 	}
 
-	app := server.NewApp()
-	// todo приведение типа?
-	port := viper.GetString("port")
-	if err := app.Run(port); err != nil {
+	config := server.AppConfig{
+		//todo приведение типа?
+		//todo проверить на пустые поля
+		Port:   viper.GetString("port"),
+		ApiUrl: viper.GetString("apiUrl"),
+	}
+	app := server.NewApp(config)
+	if err := app.Run(); err != nil {
 		log.Fatalf("error while running server: %#v", err.Error())
 	}
 }

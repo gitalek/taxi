@@ -1,3 +1,4 @@
+// setting up and running server
 package server
 
 import (
@@ -6,29 +7,45 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-	l "log"
+	"log"
 	"net/http"
 )
 
 type App interface {
-	Run(string) error
+	Run() error
 }
 
 // implementation of the interface
-type requesterApp struct{}
+type requesterApp struct {
+	config AppConfig
+}
+
 // check interface realization
 var _ App = &requesterApp{}
 
-// todo почему нельзя *App ?
-func NewApp() *requesterApp {
-	return &requesterApp{}
+type AppConfig struct {
+	Port   string
+	ApiUrl string
 }
 
-func (a requesterApp) Run(port string) error {
+// todo почему нельзя *App ?
+func NewApp(config AppConfig) *requesterApp {
+	return &requesterApp{config: config}
+}
+
+func (a requesterApp) Run() error {
 	var svc requester.Service
-	svc = &requester.RequesterService{}
+	serviceConfig := requester.ServiceConfig{
+		ApiUrl: a.config.ApiUrl,
+	}
+	svc = &requester.RequesterService{Config: serviceConfig}
 	sugar := zap.NewExample().Sugar().With("app", "requester")
-	defer sugar.Sync()
+	defer func() {
+		err := sugar.Sync()
+		if err != nil {
+			log.Fatalf("error while fleshing zap buffer: %#v\n", err)
+		}
+	}()
 	svc = requester.AppLoggingMiddleware{
 		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
@@ -51,10 +68,10 @@ func (a requesterApp) Run(port string) error {
 		)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", a.config.Port),
 		Handler: r,
 	}
 
-	l.Printf("Starting server at port %s\n", port)
+	log.Printf("Starting server at port %s\n", a.config.Port)
 	return server.ListenAndServe()
 }

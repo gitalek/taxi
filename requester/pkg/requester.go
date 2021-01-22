@@ -5,25 +5,32 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 )
 
-const authKey = "5b3ce3597851110001cf624808fb2d8f3a0048a6b091b55a9da65187"
-const apiUrl = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
+//const apiUrl = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
 
 // service as an interface
 type Service interface {
 	TripMetrics(context.Context, []Point) (int, int, error)
 }
 
+type ServiceConfig struct {
+	ApiUrl string
+}
+
 // implementation of the interface
-type RequesterService struct{}
+type RequesterService struct{
+	Config ServiceConfig
+}
+
 // check interface realization
 var _ Service = &RequesterService{}
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, error) {
+func (s *RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, error) {
 	request := BusinessMessage{c}
 	client := &http.Client{}
 	body, err := json.Marshal(request.ORSRequest())
@@ -31,12 +38,14 @@ func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, 
 		log.Println("Errored while marshalling")
 		return 0, 0, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.Config.ApiUrl, bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Errored when create request to the server")
 		return 0, 0, err
 	}
 	req.Header.Add("Accept", "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8")
+	// todo check key existence
+	authKey := viper.GetString("orskey")
 	req.Header.Add("Authorization", authKey)
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	resp, err := client.Do(req)
@@ -57,7 +66,7 @@ func (*RequesterService) TripMetrics(ctx context.Context, c []Point) (int, int, 
 		return 0, 0, errors.New("no data error") //todo: ввести кастомный тип ошибки?
 	}
 	//todo: проверить наличие свойств по цепочке ".Properties.Summary.Duration"
-	duration:= metrics.Features[0].Properties.Summary.Duration
+	duration := metrics.Features[0].Properties.Summary.Duration
 	dist := metrics.Features[0].Properties.Summary.Distance
 	return int(duration), int(dist), nil
 }
