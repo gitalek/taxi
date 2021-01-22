@@ -19,10 +19,10 @@ func main() {
 		//todo проверить на пустые поля
 		Port:        viper.GetString("port"),
 		ApiUrl:      viper.GetString("apiUrl"),
-		TaxiService: viper.GetInt("taxiService"),
-		MinPrice:    viper.GetInt("minPrice"),
-		MinuteRate:  viper.GetInt("minuteRate"),
-		KmRate:      viper.GetInt("kmRate"),
+		TaxiService: viper.GetFloat64("taxiService"),
+		MinPrice:    viper.GetFloat64("minPrice"),
+		MinuteRate:  viper.GetFloat64("minuteRate"),
+		MeterRate:   viper.GetFloat64("meterRate"),
 	}
 
 	app := server.NewApp(config)

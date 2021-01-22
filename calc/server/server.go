@@ -16,19 +16,20 @@ type App interface {
 }
 
 // implementation of the interface
-type calcApp struct{
+type calcApp struct {
 	config AppConfig
 }
+
 // check interface realization
 var _ App = &calcApp{}
 
 type AppConfig struct {
 	Port        string
 	ApiUrl      string
-	TaxiService int
-	MinPrice    int
-	MinuteRate  int
-	KmRate      int
+	TaxiService float64
+	MinPrice    float64
+	MinuteRate  float64
+	MeterRate   float64
 }
 
 // todo почему нельзя *App ?
@@ -39,13 +40,13 @@ func NewApp(config AppConfig) *calcApp {
 func (a calcApp) Run() error {
 	var svc calc.Service
 	serviceConfig := calc.ServiceConfig{
-		ApiUrl: a.config.ApiUrl,
+		ApiUrl:      a.config.ApiUrl,
 		TaxiService: a.config.TaxiService,
-		MinPrice: a.config.MinPrice,
-		MinuteRate: a.config.MinuteRate,
-		KmRate: a.config.KmRate,
+		MinPrice:    a.config.MinPrice,
+		MinuteRate:  a.config.MinuteRate,
+		MeterRate:   a.config.MeterRate,
 	}
-	svc = &calc.CalcService{Config: serviceConfig}
+	svc = calc.NewCalcService(serviceConfig)
 	sugar := zap.NewExample().Sugar().With("app", "calc")
 	defer func() {
 		err := sugar.Sync()

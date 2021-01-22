@@ -17,7 +17,7 @@ type BusinessRequest struct {
 }
 
 type BusinessResponse struct {
-	Distance int    `json:"distance"`
-	Duration int    `json:"duration"`
-	Err      string `json:"err,omitempty"`
+	Distance float64 `json:"distance"`
+	Duration float64 `json:"duration"`
+	Err      string  `json:"err,omitempty"`
 }

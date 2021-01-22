@@ -23,7 +23,7 @@ type Point struct {
 
 // response
 type Response struct {
-	Price int    `json:"price"`
+	Price float64    `json:"price"`
 	Err   string `json:"err,omitempty"`
 }
 

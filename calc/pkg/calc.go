@@ -5,21 +5,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
 
 // service as an interface
 type Service interface {
-	Price(context.Context, []Point) (int, error)
+	Price(context.Context, []Point) (float64, error)
 }
 
 type ServiceConfig struct {
 	ApiUrl      string
-	TaxiService int
-	MinPrice    int
-	MinuteRate  int
-	KmRate      int
+	TaxiService float64
+	MinPrice    float64
+	MinuteRate  float64
+	MeterRate   float64
 }
 
 // implementation of the interface
@@ -27,26 +28,39 @@ type CalcService struct {
 	Config ServiceConfig
 }
 
+// NewCalcService constructor
+func NewCalcService(config ServiceConfig) *CalcService {
+	return &CalcService{Config: config}
+}
+
 // check interface realization
 var _ Service = &CalcService{}
 
-func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
+func (s CalcService) Price(ctx context.Context, c []Point) (float64, error) {
 	message := BusinessMessage{c}
 	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
 		return 0, err
 	}
+	// format float?
 	price := s.calculatePrice(ctx, t, d)
 	return price, err
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of meters (int)
-func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
-	taxiService, minuteRate, kmRate, minPrice :=
-		s.Config.TaxiService, s.Config.MinuteRate, s.Config.KmRate, s.Config.MinPrice
+func (s *CalcService) calculatePrice(ctx context.Context, t float64, dist float64) float64 {
+	taxiService, minuteRate, meterRate, minPrice :=
+		s.Config.TaxiService, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
 	// todo check number types
-	actualPrice := taxiService + t*minuteRate + (dist * kmRate / 1000)
+	//actualPrice := t*minuteRate
+	actualPrice := taxiService + t*minuteRate + dist*meterRate
+	fmt.Printf(
+		"taxiService ---> %#v, t ---> %#v, minuteRate ---> %#v, dist ---> %#v, kmRate ---> %#v\n",
+		taxiService, t, minuteRate, dist, meterRate,
+	)
+	fmt.Printf("dist * kmRate / 1000 ---> %#v\n", (dist*meterRate)/1000)
+	fmt.Printf("actualPrice ---> %#v, minPrice ---> %#v\n", actualPrice, minPrice)
 	if minPrice >= actualPrice {
 		return minPrice
 	}
@@ -54,7 +68,7 @@ func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (s *CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (int, int, error) {
+func (s *CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (float64, float64, error) {
 	client := &http.Client{}
 	body, err := json.Marshal(message.Request())
 	if err != nil {

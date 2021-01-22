@@ -8,9 +8,9 @@ import (
 
 func TestCalcService_CalculatePrice(t *testing.T) {
 	tests := map[string]struct {
-		Time int
-		Dist int
-		Want int
+		Time float64
+		Dist float64
+		Want float64
 	}{
 		"actual price EQUALS minimal one":       {4, 3, 150},
 		"actual price is LESS than minimal one": {3, 2, 150},
@@ -18,7 +18,14 @@ func TestCalcService_CalculatePrice(t *testing.T) {
 	}
 
 	assert := a.New(t)
-	s := new(CalcService)
+	serviceConfig := ServiceConfig{
+		ApiUrl:      "http://localhost:9091/tripmetrics",
+		TaxiService: 50,
+		MinPrice:    150,
+		MinuteRate:  10,
+		MeterRate:      20,
+	}
+	s := NewCalcService(serviceConfig)
 
 	for name, testCase := range tests {
 		t.Run(name, func(t *testing.T) {
