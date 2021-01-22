@@ -23,7 +23,7 @@ type AppLoggingMiddleware struct {
 }
 var _ Service = &AppLoggingMiddleware{}
 
-func (mv AppLoggingMiddleware) TripMetrics(ctx context.Context, c []Point) (int, int, error) {
+func (mv AppLoggingMiddleware) TripMetrics(ctx context.Context, c []Point) (float64, float64, error) {
 	mv.Logger.Infow(
 		"",
 		"method", "TripMetrics",

@@ -1,9 +1,9 @@
 package requester
 
 import (
+	"context"
 	"errors"
 	"github.com/go-kit/kit/endpoint"
-	"golang.org/x/net/context"
 )
 
 type Request struct {

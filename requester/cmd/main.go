@@ -19,6 +19,7 @@ func main() {
 		//todo проверить на пустые поля
 		Port:   viper.GetString("port"),
 		ApiUrl: viper.GetString("apiUrl"),
+		ORSKey: viper.GetString("orskey"),
 	}
 	app := server.NewApp(config)
 	if err := app.Run(); err != nil {

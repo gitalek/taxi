@@ -14,6 +14,7 @@ func main() {
 		log.Fatalf("error while reading config: %#v\n", err)
 	}
 
+	// names collision
 	config := server.AppConfig{
 		//todo приведение типа?
 		//todo проверить на пустые поля

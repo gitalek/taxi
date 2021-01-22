@@ -49,11 +49,10 @@ func (s CalcService) Price(ctx context.Context, c []Point) (float64, error) {
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of meters (int)
-func (s *CalcService) calculatePrice(ctx context.Context, t float64, dist float64) float64 {
+func (s *CalcService) calculatePrice(_ context.Context, t float64, dist float64) float64 {
 	taxiService, minuteRate, meterRate, minPrice :=
 		s.Config.TaxiService, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
 	// todo check number types
-	//actualPrice := t*minuteRate
 	actualPrice := taxiService + t*minuteRate + dist*meterRate
 	fmt.Printf(
 		"taxiService ---> %#v, t ---> %#v, minuteRate ---> %#v, dist ---> %#v, kmRate ---> %#v\n",

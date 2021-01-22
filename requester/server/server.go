@@ -26,6 +26,7 @@ var _ App = &requesterApp{}
 type AppConfig struct {
 	Port   string
 	ApiUrl string
+	ORSKey string
 }
 
 // todo почему нельзя *App ?
@@ -37,6 +38,7 @@ func (a requesterApp) Run() error {
 	var svc requester.Service
 	serviceConfig := requester.ServiceConfig{
 		ApiUrl: a.config.ApiUrl,
+		ORSKey: a.config.ORSKey,
 	}
 	svc = &requester.RequesterService{Config: serviceConfig}
 	sugar := zap.NewExample().Sugar().With("app", "requester")
