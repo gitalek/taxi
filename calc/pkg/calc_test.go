@@ -19,11 +19,11 @@ func TestCalcService_CalculatePrice(t *testing.T) {
 
 	assert := a.New(t)
 	serviceConfig := ServiceConfig{
-		ApiUrl:      "http://localhost:9091/tripmetrics",
-		TaxiService: 50,
-		MinPrice:    150,
-		MinuteRate:  10,
-		MeterRate:      20,
+		ApiUrl:           "http://localhost:9091/tripmetrics",
+		TaxiServicePrice: 50,
+		MinPrice:         150,
+		MinuteRate:       10,
+		MeterRate:        20,
 	}
 	s := NewCalcService(serviceConfig)
 

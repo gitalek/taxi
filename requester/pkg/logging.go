@@ -2,6 +2,7 @@ package requester
 
 import (
 	"context"
+	"github.com/gitalek/taxi/requester/pkg/types"
 	"github.com/go-kit/kit/endpoint"
 	"go.uber.org/zap"
 )
@@ -23,11 +24,11 @@ type AppLoggingMiddleware struct {
 }
 var _ Service = &AppLoggingMiddleware{}
 
-func (mv AppLoggingMiddleware) TripMetrics(ctx context.Context, c []Point) (float64, float64, error) {
+func (mv AppLoggingMiddleware) TripMetrics(ctx context.Context, c []types.Point, strategy int) (float64, float64, error) {
 	mv.Logger.Infow(
 		"",
 		"method", "TripMetrics",
 		"params: c", c,
 	)
-	return mv.Next.TripMetrics(ctx, c)
+	return mv.Next.TripMetrics(ctx, c, strategy)
 }

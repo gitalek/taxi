@@ -9,11 +9,13 @@ import (
 // request api v1
 type Request struct {
 	Coordinates [][]float64 `json:"coordinates"`
+	Strategy    int         `json:"strategy"`
 }
 
 // request api v2
 type RequestV2 struct {
 	Coordinates []Point `json:"coordinates"`
+	Strategy    int     `json:"strategy"`
 }
 
 type Point struct {
@@ -23,8 +25,8 @@ type Point struct {
 
 // response
 type Response struct {
-	Price float64    `json:"price"`
-	Err   string `json:"err,omitempty"`
+	Price float64 `json:"price"`
+	Err   string  `json:"err,omitempty"`
 }
 
 func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
@@ -34,7 +36,7 @@ func MakeCalculatePriceEndpoint(svc Service) endpoint.Endpoint {
 			err = errors.New("MakeCalculatePriceEndpoint: error while Request type casting")
 			return Response{Err: err.Error()}, nil
 		}
-		price, err := svc.Price(ctx, req.Coordinates)
+		price, err := svc.Price(ctx, req.Coordinates, req.Strategy)
 		if err != nil {
 			return Response{Err: err.Error()}, nil
 		}

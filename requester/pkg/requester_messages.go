@@ -1,7 +1,9 @@
 package requester
 
+import "github.com/gitalek/taxi/requester/pkg/types"
+
 type BusinessMessage struct {
-	Coordinates []Point
+	Coordinates []types.Point
 }
 
 func (r BusinessMessage) ORSRequest() ORSRequest {
@@ -138,7 +140,7 @@ type BMResponse struct {
 			//TrafficDataUsed       string  `json:"trafficDataUsed"`
 			TravelDistance        float64 `json:"travelDistance"`
 			TravelDuration        int     `json:"travelDuration"`
-			//TravelDurationTraffic int     `json:"travelDurationTraffic"`
+			TravelDurationTraffic int     `json:"travelDurationTraffic"`
 			//TravelMode            string  `json:"travelMode"`
 		} `json:"resources"`
 	} `json:"resourceSets"`

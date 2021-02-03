@@ -2,6 +2,7 @@ package calc
 
 type BusinessMessage struct {
 	Coordinates []Point
+	Strategy    int
 }
 
 func (r BusinessMessage) Request() BusinessRequest {
@@ -14,6 +15,7 @@ func (r BusinessMessage) Response() BusinessResponse {
 
 type BusinessRequest struct {
 	Coordinates []Point `json:"coordinates"`
+	Strategy    int     `json:"strategy"`
 }
 
 type BusinessResponse struct {

@@ -24,12 +24,12 @@ type calcApp struct {
 var _ App = &calcApp{}
 
 type AppConfig struct {
-	Port        string
-	ApiUrl      string
-	TaxiService float64
-	MinPrice    float64
-	MinuteRate  float64
-	MeterRate   float64
+	Port             string
+	ApiUrl           string
+	TaxiServicePrice float64
+	MinPrice         float64
+	MinuteRate       float64
+	MeterRate        float64
 }
 
 // todo почему нельзя *App ?
@@ -40,11 +40,11 @@ func NewApp(config AppConfig) *calcApp {
 func (a calcApp) Run() error {
 	var svc calc.Service
 	serviceConfig := calc.ServiceConfig{
-		ApiUrl:      a.config.ApiUrl,
-		TaxiService: a.config.TaxiService,
-		MinPrice:    a.config.MinPrice,
-		MinuteRate:  a.config.MinuteRate,
-		MeterRate:   a.config.MeterRate,
+		ApiUrl:           a.config.ApiUrl,
+		TaxiServicePrice: a.config.TaxiServicePrice,
+		MinPrice:         a.config.MinPrice,
+		MinuteRate:       a.config.MinuteRate,
+		MeterRate:        a.config.MeterRate,
 	}
 	svc = calc.NewCalcService(serviceConfig)
 	sugar := zap.NewExample().Sugar().With("app", "calc")

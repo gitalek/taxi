@@ -12,15 +12,15 @@ import (
 
 // service as an interface
 type Service interface {
-	Price(context.Context, []Point) (float64, error)
+	Price(context.Context, []Point, int) (float64, error)
 }
 
 type ServiceConfig struct {
-	ApiUrl      string
-	TaxiService float64
-	MinPrice    float64
-	MinuteRate  float64
-	MeterRate   float64
+	ApiUrl           string
+	TaxiServicePrice float64
+	MinPrice         float64
+	MinuteRate       float64
+	MeterRate        float64
 }
 
 // implementation of the interface
@@ -36,8 +36,8 @@ func NewCalcService(config ServiceConfig) *CalcService {
 // check interface realization
 var _ Service = &CalcService{}
 
-func (s CalcService) Price(ctx context.Context, c []Point) (float64, error) {
-	message := BusinessMessage{c}
+func (s CalcService) Price(ctx context.Context, c []Point, strategy int) (float64, error) {
+	message := BusinessMessage{Coordinates: c, Strategy: strategy}
 	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
 		return 0, err
@@ -51,7 +51,7 @@ func (s CalcService) Price(ctx context.Context, c []Point) (float64, error) {
 // params: t - number of minutes (int), dist - number of meters (int)
 func (s *CalcService) calculatePrice(_ context.Context, t float64, dist float64) float64 {
 	taxiService, minuteRate, meterRate, minPrice :=
-		s.Config.TaxiService, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
+		s.Config.TaxiServicePrice, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
 	// todo check number types
 	actualPrice := taxiService + t*minuteRate + dist*meterRate
 	fmt.Printf(

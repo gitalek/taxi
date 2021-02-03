@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gitalek/taxi/requester/config"
+	_map "github.com/gitalek/taxi/requester/pkg/map"
 	"github.com/gitalek/taxi/requester/server"
 	"github.com/spf13/viper"
 	"log"
@@ -15,11 +16,8 @@ func main() {
 	}
 
 	config := server.AppConfig{
-		//todo приведение типа?
-		//todo проверить на пустые поля
-		Port:   viper.GetString("port"),
-		ApiUrl: viper.GetString("apiUrl"),
-		ORSKey: viper.GetString("orskey"),
+		Port: viper.GetString("port"),
+		Maps: _map.InitMaps(),
 	}
 	app := server.NewApp(config)
 	if err := app.Run(); err != nil {

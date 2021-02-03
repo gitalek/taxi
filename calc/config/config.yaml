@@ -1,6 +1,6 @@
 ---
 port: 9090
-taxiService: 50
+taxiServicePrice: 50
 minPrice: 150
 minuteRate: 10
 meterRate: 0.02

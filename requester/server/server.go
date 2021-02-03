@@ -4,6 +4,7 @@ package server
 import (
 	"fmt"
 	requester "github.com/gitalek/taxi/requester/pkg"
+	"github.com/gitalek/taxi/requester/pkg/types"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -24,9 +25,8 @@ type requesterApp struct {
 var _ App = &requesterApp{}
 
 type AppConfig struct {
-	Port   string
-	ApiUrl string
-	ORSKey string
+	Port string
+	Maps map[string]types.Requester
 }
 
 // todo почему нельзя *App ?
@@ -37,8 +37,7 @@ func NewApp(config AppConfig) *requesterApp {
 func (a requesterApp) Run() error {
 	var svc requester.Service
 	serviceConfig := requester.ServiceConfig{
-		ApiUrl: a.config.ApiUrl,
-		ORSKey: a.config.ORSKey,
+		Maps: a.config.Maps,
 	}
 	svc = &requester.RequesterService{Config: serviceConfig}
 	sugar := zap.NewExample().Sugar().With("app", "requester")

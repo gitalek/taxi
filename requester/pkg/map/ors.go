@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gitalek/taxi/requester/pkg"
+	"github.com/gitalek/taxi/requester/pkg/types"
 	"log"
 	"net/http"
 )
@@ -27,7 +27,7 @@ type ORSResponse struct {
 	} `json:"features"`
 }
 
-func ORSMetrics(ctx context.Context, c []requester.Point, key string, url string) (float64, float64, error) {
+func ORSMetrics(ctx context.Context, c []types.Point, key string, url string) (float64, float64, error) {
 	req, err := prepareORSRequest(ctx, c, key, url)
 	if err != nil {
 		return 0, 0, err
@@ -51,18 +51,22 @@ func ORSMetrics(ctx context.Context, c []requester.Point, key string, url string
 		return 0, 0, err
 	}
 	if len(metrics.Features) == 0 {
+		log.Printf("ErrNoStructureProperty: %#v\n", metrics)
 		return 0, 0, errors.New("no data error") //todo: ввести кастомный тип ошибки?
 	}
 	//todo: проверить наличие свойств по цепочке ".Properties.Summary.Duration"
 	duration := metrics.Features[0].Properties.Summary.Duration
 	dist := metrics.Features[0].Properties.Summary.Distance
+	log.Printf("duration -> %#v, dist -> %#v\n", duration, dist)
 	return duration, dist, nil
 }
 
-func prepareORSRequest(ctx context.Context, points []requester.Point, key string, url string) (req *http.Request, err error) {
+func prepareORSRequest(ctx context.Context, points []types.Point, key string, url string) (req *http.Request, err error) {
 	coordinates := make([][]float64, 0, len(points))
 	for _, point := range points {
-		coordinates = append(coordinates, []float64{point.Lat, point.Lon})
+		// Start coordinate of the route in longitude,latitude format. - openroute
+		//coordinates = append(coordinates, []float64{point.Lat, point.Lon})
+		coordinates = append(coordinates, []float64{point.Lon, point.Lat})
 	}
 	r := ORSRequest{Coordinates: coordinates, Language: "ru", Units: "m"}
 	body, err := json.Marshal(r)

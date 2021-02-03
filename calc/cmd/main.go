@@ -18,12 +18,12 @@ func main() {
 	config := server.AppConfig{
 		//todo приведение типа?
 		//todo проверить на пустые поля
-		Port:        viper.GetString("port"),
-		ApiUrl:      viper.GetString("apiUrl"),
-		TaxiService: viper.GetFloat64("taxiService"),
-		MinPrice:    viper.GetFloat64("minPrice"),
-		MinuteRate:  viper.GetFloat64("minuteRate"),
-		MeterRate:   viper.GetFloat64("meterRate"),
+		Port:             viper.GetString("port"),
+		ApiUrl:           viper.GetString("apiUrl"),
+		TaxiServicePrice: viper.GetFloat64("taxiServicePrice"),
+		MinPrice:         viper.GetFloat64("minPrice"),
+		MinuteRate:       viper.GetFloat64("minuteRate"),
+		MeterRate:        viper.GetFloat64("meterRate"),
 	}
 
 	app := server.NewApp(config)
