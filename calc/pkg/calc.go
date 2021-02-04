@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -94,12 +95,20 @@ func (s *CalcService) tripMetrics(ctx context.Context, message BusinessMessage) 
 		return 0, 0, err
 	}
 	// todo check service response struct error
+	err = checkORSResponse(metrics)
+	if err != nil {
+		return 0, 0, err
+	}
 	// todo multiple points case
 	duration := metrics.Duration
 	dist := metrics.Distance
 	return duration, dist, nil
 }
 
-// todo ?
-// ServiceMiddleware is a chainable behaviour modifier for Service
-type ServiceMiddleware func(Service) Service
+func checkORSResponse(metrics BusinessResponse) error {
+	if metrics.Err != "" {
+		log.Printf("ErrNoStructureProperty: %#v\n", metrics)
+		return errors.New("remote service inner error happened")
+	}
+	return nil
+}
