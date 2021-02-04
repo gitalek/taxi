@@ -8,13 +8,13 @@ const configType = "yaml"
 
 func Init() error {
 	viper.SetEnvPrefix("taxi")
-	// TAXI_ORSKEY os var
-	err := viper.BindEnv("orskey")
+	// TAXI_ORS_TOKEN os var
+	err := viper.BindEnv("ors_token")
 	if err != nil {
 		return err
 	}
-	// TAXI_BINGMPKEY os var
-	err = viper.BindEnv("bingmpkey")
+	// TAXI_BING_TOKEN os var
+	err = viper.BindEnv("bing_token")
 	if err != nil {
 		return err
 	}

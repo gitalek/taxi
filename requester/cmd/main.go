@@ -15,22 +15,25 @@ func main() {
 		log.Fatalf("error while reading config: %#v\n", err)
 	}
 
-	maps := make(types.MapsConfig)
-	// todo: dynamic?
-	orsUrl := viper.GetString("apiUrl")
-	orsToken := viper.GetString("orskey")
-	bingUrl := viper.GetString("bingMapsApi")
-	bingToken := viper.GetString("bingmpkey")
-
-	maps["ors"] = types.MapConfig{Url: orsUrl, Token: orsToken}
-	maps["bing"] = types.MapConfig{Url: bingUrl, Token: bingToken}
-
-	config := server.AppConfig{
+	appConfig := server.AppConfig{
 		Port: viper.GetString("port"),
-		Maps: maps,
+		Maps: InitMapsConfig(),
 	}
-	app := server.NewApp(config)
+	app := server.NewApp(appConfig)
 	if err := app.Run(); err != nil {
 		log.Fatalf("error while running server: %#v", err.Error())
 	}
+}
+
+func InitMapsConfig() types.MapsConfig {
+	maps := make(types.MapsConfig)
+	//todo: dynamic?
+	//todo: check access properties errors
+	orsUrl := viper.GetString("orsUrl")
+	orsToken := viper.GetString("ors_token")
+	bingUrl := viper.GetString("bingUrl")
+	bingToken := viper.GetString("bing_token")
+	maps["ors"] = types.MapConfig{Url: orsUrl, Token: orsToken}
+	maps["bing"] = types.MapConfig{Url: bingUrl, Token: bingToken}
+	return maps
 }
