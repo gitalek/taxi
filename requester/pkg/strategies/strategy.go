@@ -8,13 +8,13 @@ import (
 
 func InitStrategies() []types.Strategy {
 	// todo: dynamic?
-	var strategies []types.Strategy
-	strategies = append(strategies, first)
-	strategies = append(strategies, second)
-	strategies = append(strategies, third)
-	strategies = append(strategies, fourth)
-	strategies = append(strategies, fifth)
-	return strategies
+	return []types.Strategy{
+		first,
+		second,
+		third,
+		fourth,
+		fifth,
+	}
 }
 
 func first(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
