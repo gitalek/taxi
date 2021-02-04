@@ -17,14 +17,17 @@ func InitStrategies() []types.Strategy {
 	}
 }
 
+// ors
 func first(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
 	return maps["ors"](ctx, points)
 }
 
+// bing
 func second(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
 	return maps["bing_maps"](ctx, points)
 }
 
+// bing otherwise ors
 func third(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
 	t, dist, err := maps["bing_maps"](ctx, points)
 	if err != nil {
@@ -39,18 +42,17 @@ type res struct {
 	err      error
 }
 
+// first win
 func fourth(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	done := make(chan interface{})
 	defer func() {
 		cancel()
-		close(done)
 	}()
 	results := make(chan res, len(maps))
 	for _, requester := range maps {
-		go func(done <-chan interface{}, requester types.Requester, ch chan<- res) {
+		go func(requester types.Requester, ch chan<- res) {
 			select {
-			case <-done:
+			case <-ctx.Done():
 				return
 			default:
 				t, dist, err := requester(ctx, points)
@@ -60,12 +62,13 @@ func fourth(ctx context.Context, points []types.Point, maps map[string]types.Req
 					err:      err,
 				}
 			}
-		}(done, requester, results)
+		}(requester, results)
 	}
 	res := <-results
 	return res.duration, res.distance, res.err
 }
 
+// average
 func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
 	results := make(chan res, len(maps))
 	var wg sync.WaitGroup
