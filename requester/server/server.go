@@ -4,6 +4,7 @@ package server
 import (
 	"fmt"
 	requester "github.com/gitalek/taxi/requester/pkg"
+	_map "github.com/gitalek/taxi/requester/pkg/map"
 	"github.com/gitalek/taxi/requester/pkg/types"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -26,7 +27,7 @@ var _ App = &requesterApp{}
 
 type AppConfig struct {
 	Port string
-	Maps map[string]types.Requester
+	Maps types.MapsConfig
 }
 
 // todo почему нельзя *App ?
@@ -37,7 +38,7 @@ func NewApp(config AppConfig) *requesterApp {
 func (a requesterApp) Run() error {
 	var svc requester.Service
 	serviceConfig := requester.ServiceConfig{
-		Maps: a.config.Maps,
+		Maps:   _map.InitMaps(a.config.Maps),
 		Client: &http.Client{},
 	}
 	svc = &requester.RequesterService{Config: serviceConfig}
