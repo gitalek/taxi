@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gitalek/taxi/requester/pkg/strategies"
 	"github.com/gitalek/taxi/requester/pkg/types"
+	"net/http"
 )
 
 func init() {
@@ -17,6 +18,7 @@ type Service interface {
 
 type ServiceConfig struct {
 	Maps map[string]types.Requester
+	Client *http.Client
 }
 
 // implementation of the interface
@@ -33,5 +35,5 @@ func (s *RequesterService) TripMetrics(ctx context.Context, c []types.Point, str
 	if strategy < 1 || strategy > len(strtgs) {
 		strategy = 1
 	}
-	return strtgs[strategy-1](ctx, c, s.Config.Maps)
+	return strtgs[strategy-1](ctx, c, s.Config.Maps, s.Config.Client)
 }

@@ -19,14 +19,14 @@ type BMResponse struct {
 	} `json:"resourceSets"`
 }
 
-func BingMapsMetrics(ctx context.Context, c []types.Point, key string, url string) (float64, float64, error) {
+func BingMapsMetrics(ctx context.Context, c []types.Point, key string, url string, client *http.Client) (float64, float64, error) {
 	req, err := prepareBingMapsRequest(ctx, c, key, url)
 	if err != nil {
 		return 0, 0, err
 	}
 
 	//todo global client?
-	client := &http.Client{}
+	//client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Errored when sending request to the server: %#v\n", err)

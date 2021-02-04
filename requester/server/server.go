@@ -38,6 +38,7 @@ func (a requesterApp) Run() error {
 	var svc requester.Service
 	serviceConfig := requester.ServiceConfig{
 		Maps: a.config.Maps,
+		Client: &http.Client{},
 	}
 	svc = &requester.RequesterService{Config: serviceConfig}
 	sugar := zap.NewExample().Sugar().With("app", "requester")

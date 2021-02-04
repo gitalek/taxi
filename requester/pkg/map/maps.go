@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gitalek/taxi/requester/pkg/types"
 	"github.com/spf13/viper"
+	"net/http"
 )
 
 // todo should return error
@@ -20,7 +21,7 @@ func InitMaps() map[string]types.Requester {
 }
 
 func genRequestMetrics(f types.RequestMetrics, key string, url string) types.Requester {
-	return func(ctx context.Context, points []types.Point) (float64, float64, error) {
-		return f(ctx, points, key, url)
+	return func(ctx context.Context, points []types.Point, client *http.Client,) (float64, float64, error) {
+		return f(ctx, points, key, url, client)
 	}
 }

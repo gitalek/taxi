@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gitalek/taxi/requester/pkg/types"
+	"net/http"
 	"sync"
 )
 
@@ -19,20 +20,20 @@ func InitStrategies() []types.Strategy {
 }
 
 // ors
-func first(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
-	return maps["ors"](ctx, points)
+func first(ctx context.Context, points []types.Point, maps map[string]types.Requester, client *http.Client) (float64, float64, error) {
+	return maps["ors"](ctx, points, client)
 }
 
 // bing
-func second(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
-	return maps["bing_maps"](ctx, points)
+func second(ctx context.Context, points []types.Point, maps map[string]types.Requester, client *http.Client) (float64, float64, error) {
+	return maps["bing_maps"](ctx, points, client)
 }
 
 // bing otherwise ors
-func third(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
-	t, dist, err := maps["bing_maps"](ctx, points)
+func third(ctx context.Context, points []types.Point, maps map[string]types.Requester, client *http.Client) (float64, float64, error) {
+	t, dist, err := maps["bing_maps"](ctx, points, client)
 	if err != nil {
-		return maps["ors"](ctx, points)
+		return maps["ors"](ctx, points, client)
 	}
 	return t, dist, err
 }
@@ -44,7 +45,7 @@ type res struct {
 }
 
 // first win
-func fourth(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
+func fourth(ctx context.Context, points []types.Point, maps map[string]types.Requester, client *http.Client) (float64, float64, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		cancel()
@@ -56,7 +57,7 @@ func fourth(ctx context.Context, points []types.Point, maps map[string]types.Req
 			case <-ctx.Done():
 				return
 			default:
-				t, dist, err := requester(ctx, points)
+				t, dist, err := requester(ctx, points, client)
 				ch <- res{
 					duration: t,
 					distance: dist,
@@ -70,14 +71,14 @@ func fourth(ctx context.Context, points []types.Point, maps map[string]types.Req
 }
 
 // average
-func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requester) (float64, float64, error) {
+func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requester, client *http.Client) (float64, float64, error) {
 	results := make(chan res, len(maps))
 	var wg sync.WaitGroup
 	wg.Add(len(maps))
 	for _, requester := range maps {
 		go func(wg *sync.WaitGroup, requester types.Requester, ch chan<- res) {
 			defer wg.Done()
-			t, dist, err := requester(ctx, points)
+			t, dist, err := requester(ctx, points, client)
 			ch <- res{
 				duration: t,
 				distance: dist,
@@ -101,7 +102,7 @@ func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requ
 		distance += result.distance
 	}
 	if successCounter == 0 {
-		//todo: wrap errors with cycle
+		//todo: wrap errors within cycle
 		return 0, 0, errors.New("all requests ended with errors")
 	}
 
