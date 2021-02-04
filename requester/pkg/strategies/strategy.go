@@ -2,6 +2,7 @@ package strategies
 
 import (
 	"context"
+	"errors"
 	"github.com/gitalek/taxi/requester/pkg/types"
 	"sync"
 )
@@ -90,13 +91,20 @@ func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requ
 	}(&wg, results)
 
 	var duration, distance float64
+	var successCounter int
 	for result := range results {
 		if result.err != nil {
-			return 0, 0, result.err
+			continue
 		}
+		successCounter += 1
 		duration += result.duration
 		distance += result.distance
 	}
+	if successCounter == 0 {
+		//todo: wrap errors with cycle
+		return 0, 0, errors.New("all requests ended with errors")
+	}
+
 	count := float64(len(maps))
 	return duration / count, distance / count, nil
 }
