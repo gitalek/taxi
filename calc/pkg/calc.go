@@ -44,7 +44,7 @@ func (s CalcService) Price(ctx context.Context, c []Point, strategy int) (float6
 	}
 	// format float?
 	price := s.calculatePrice(ctx, t, d)
-	return price, err
+	return price, nil
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);

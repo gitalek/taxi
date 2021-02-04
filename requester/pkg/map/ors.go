@@ -33,8 +33,6 @@ func ORSMetrics(ctx context.Context, c []types.Point, key string, url string, cl
 		return 0, 0, err
 	}
 
-	//todo global client?
-	//client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Errored when sending request to the server: %#v\n", err)
@@ -50,12 +48,14 @@ func ORSMetrics(ctx context.Context, c []types.Point, key string, url string, cl
 		log.Printf("TripMetrics: errored while decoding: %#v\n", err)
 		return 0, 0, err
 	}
-	if len(metrics.Features) == 0 {
-		log.Printf("ErrNoStructureProperty: %#v\n", metrics)
-		return 0, 0, errors.New("no data error") //todo: ввести кастомный тип ошибки?
+	err = checkORSResponse(metrics)
+	if err != nil {
+		return 0, 0, err
 	}
-	//todo: проверить наличие свойств по цепочке ".Properties.Summary.Duration"
 	duration := metrics.Features[0].Properties.Summary.Duration
+	// duration in seconds -> convert to minutes
+	duration = duration / 60.0
+	// dist in meters
 	dist := metrics.Features[0].Properties.Summary.Distance
 	log.Printf("duration -> %#v, dist -> %#v\n", duration, dist)
 	return duration, dist, nil
@@ -84,4 +84,12 @@ func prepareORSRequest(ctx context.Context, points []types.Point, key string, ur
 	req.Header.Add("Authorization", key)
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	return req, nil
+}
+
+func checkORSResponse(metrics ORSResponse) error {
+	if len(metrics.Features) == 0 {
+		log.Printf("ErrNoStructureProperty: %#v\n", metrics)
+		return errors.New("metrics.Features property is an empty array")
+	}
+	return nil
 }

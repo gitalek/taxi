@@ -106,6 +106,6 @@ func fifth(ctx context.Context, points []types.Point, maps map[string]types.Requ
 		return 0, 0, errors.New("all requests ended with errors")
 	}
 
-	count := float64(len(maps))
+	count := float64(successCounter)
 	return duration / count, distance / count, nil
 }
