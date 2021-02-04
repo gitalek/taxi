@@ -51,21 +51,35 @@ func fourth(ctx context.Context, points []types.Point, maps map[string]types.Req
 		cancel()
 	}()
 	results := make(chan res, len(maps))
+	var wg sync.WaitGroup
+	wg.Add(len(maps))
 	for _, requester := range maps {
-		go func(requester types.Requester, ch chan<- res) {
+		go func(wg *sync.WaitGroup, requester types.Requester, ch chan<- res) {
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
 				return
 			default:
 				t, dist, err := requester(ctx, points, client)
+				if err != nil {
+					return
+				}
 				ch <- res{
 					duration: t,
 					distance: dist,
 					err:      err,
 				}
 			}
-		}(requester, results)
+		}(&wg, requester, results)
 	}
+	go func() {
+		defer func() {
+		results <- res{
+			err: errors.New("no remote service responded"),
+		}
+		}()
+		wg.Wait()
+	}()
 	res := <-results
 	return res.duration, res.distance, res.err
 }
