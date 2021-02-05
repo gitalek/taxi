@@ -1,3 +1,7 @@
+![build](https://github.com/gitalek/taxi/workflows/build/badge.svg)  
+![test](https://github.com/gitalek/taxi/workflows/test/badge.svg)  
+![lint](https://github.com/gitalek/taxi/workflows/lint/badge.svg)  
+
 # taxi
 
 ### API V1

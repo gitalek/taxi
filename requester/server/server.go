@@ -1,43 +1,62 @@
+// setting up and running server
 package server
 
 import (
 	"fmt"
 	requester "github.com/gitalek/taxi/requester/pkg"
-	"github.com/go-kit/kit/log"
+	_map "github.com/gitalek/taxi/requester/pkg/map"
+	"github.com/gitalek/taxi/requester/pkg/types"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	l "log"
+	"go.uber.org/zap"
+	"log"
 	"net/http"
 )
 
 type App interface {
-	Run(string) error
+	Run() error
 }
 
 // implementation of the interface
-type requesterApp struct{}
+type requesterApp struct {
+	config AppConfig
+}
+
 // check interface realization
 var _ App = &requesterApp{}
 
-// todo почему нельзя *App ?
-func NewApp() *requesterApp {
-	return &requesterApp{}
+type AppConfig struct {
+	Port string
+	Maps types.MapsConfig
 }
 
-func (a requesterApp) Run(port string) error {
+// todo почему нельзя *App ?
+func NewApp(config AppConfig) *requesterApp {
+	return &requesterApp{config: config}
+}
+
+func (a requesterApp) Run() error {
 	var svc requester.Service
-	svc = &requester.RequesterService{}
-	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
-	loggerSvc = log.WithPrefix(loggerSvc, "app", "requester", "layer", "logic")
+	serviceConfig := requester.ServiceConfig{
+		Maps:   _map.InitMaps(a.config.Maps),
+		Client: &http.Client{},
+	}
+	svc = &requester.RequesterService{Config: serviceConfig}
+	sugar := zap.NewExample().Sugar().With("app", "requester")
+	defer func() {
+		err := sugar.Sync()
+		if err != nil {
+			log.Fatalf("error while fleshing zap buffer: %#v\n", err)
+		}
+	}()
 	svc = requester.AppLoggingMiddleware{
-		Logger: loggerSvc,
+		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
 	}
 
-	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	tripMetrics := requester.MakeTripMetricsEndpoint(svc)
 	tripMetrics = requester.LoggingMiddleware(
-		log.WithPrefix(loggerEndpoint, "app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
+		sugar.With("app", "requester", "layer", "transport: endpoint", "method", "TripMetrics"),
 	)(tripMetrics)
 
 	r := mux.NewRouter()
@@ -52,10 +71,10 @@ func (a requesterApp) Run(port string) error {
 		)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", a.config.Port),
 		Handler: r,
 	}
 
-	l.Printf("Starting server at port %s\n", port)
+	log.Printf("Starting server at port %s\n", a.config.Port)
 	return server.ListenAndServe()
 }

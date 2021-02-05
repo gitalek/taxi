@@ -1,43 +1,67 @@
+// setting up and running server
 package server
 
 import (
 	"fmt"
 	calc "github.com/gitalek/taxi/calc/pkg"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	l "log"
+	"go.uber.org/zap"
+	"log"
 	"net/http"
 )
 
 type App interface {
-	Run(string) error
+	Run() error
 }
 
 // implementation of the interface
-type calcApp struct{}
+type calcApp struct {
+	config AppConfig
+}
+
 // check interface realization
 var _ App = &calcApp{}
 
-// todo почему нельзя *App ?
-func NewApp() *calcApp {
-	return &calcApp{}
+type AppConfig struct {
+	Port             string
+	ApiUrl           string
+	TaxiServicePrice float64
+	MinPrice         float64
+	MinuteRate       float64
+	MeterRate        float64
 }
 
-func (a calcApp) Run(port string) error {
+// todo почему нельзя *App ?
+func NewApp(config AppConfig) *calcApp {
+	return &calcApp{config: config}
+}
+
+func (a calcApp) Run() error {
 	var svc calc.Service
-	svc = &calc.CalcService{}
-	loggerSvc := log.NewLogfmtLogger(log.StdlibWriter{})
-	loggerSvc = log.WithPrefix(loggerSvc, "app", "calc", "layer", "logic")
+	serviceConfig := calc.ServiceConfig{
+		ApiUrl:           a.config.ApiUrl,
+		TaxiServicePrice: a.config.TaxiServicePrice,
+		MinPrice:         a.config.MinPrice,
+		MinuteRate:       a.config.MinuteRate,
+		MeterRate:        a.config.MeterRate,
+	}
+	svc = calc.NewCalcService(serviceConfig)
+	sugar := zap.NewExample().Sugar().With("app", "calc")
+	defer func() {
+		err := sugar.Sync()
+		if err != nil {
+			log.Fatalf("error while fleshing zap buffer: %#v\n", err)
+		}
+	}()
 	svc = calc.AppLoggingMiddleware{
-		Logger: loggerSvc,
+		Logger: sugar.With("layer", "logic"),
 		Next:   svc,
 	}
 
-	loggerEndpoint := log.NewLogfmtLogger(log.StdlibWriter{})
 	calculatePrice := calc.MakeCalculatePriceEndpoint(svc)
 	calculatePrice = calc.LoggingMiddleware(
-		log.WithPrefix(loggerEndpoint, "app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
+		sugar.With("app", "calc", "layer", "transport: endpoint", "method", "calculatePrice"),
 	)(calculatePrice)
 
 	r := mux.NewRouter()
@@ -68,8 +92,8 @@ func (a calcApp) Run(port string) error {
 		}
 	})
 
-	address := fmt.Sprintf(":%s", port)
-	l.Printf("Starting server at port %s\n", port)
+	address := fmt.Sprintf(":%s", a.config.Port)
+	log.Printf("Starting server at port %s\n", a.config.Port)
 	http.Handle("/", r)
 
 	return http.ListenAndServe(address, nil)

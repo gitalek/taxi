@@ -1,1 +1,4 @@
+---
 port: 9091
+bingUrl: "http://dev.virtualearth.net/REST/V1/Routes/Driving"
+orsUrl: "https://api.openrouteservice.org/v2/directions/driving-car/geojson"

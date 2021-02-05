@@ -5,45 +5,62 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 )
 
 // service as an interface
 type Service interface {
-	Price(context.Context, []Point) (int, error)
+	Price(context.Context, []Point, int) (float64, error)
 }
 
-const (
-	taxiService = 50
-	minPrice    = 150
-	minuteRate  = 10
-	kmRate      = 20
-)
-
-const apiUrl = "http://localhost:9091/tripmetrics"
+type ServiceConfig struct {
+	ApiUrl           string
+	TaxiServicePrice float64
+	MinPrice         float64
+	MinuteRate       float64
+	MeterRate        float64
+}
 
 // implementation of the interface
-type CalcService struct{}
+type CalcService struct {
+	Config ServiceConfig
+}
+
+// NewCalcService constructor
+func NewCalcService(config ServiceConfig) *CalcService {
+	return &CalcService{Config: config}
+}
 
 // check interface realization
 var _ Service = &CalcService{}
 
-func (s CalcService) Price(ctx context.Context, c []Point) (int, error) {
-	message := BusinessMessage{c}
+func (s CalcService) Price(ctx context.Context, c []Point, strategy int) (float64, error) {
+	message := BusinessMessage{Coordinates: c, Strategy: strategy}
 	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
 		return 0, err
 	}
+	// format float?
 	price := s.calculatePrice(ctx, t, d)
-	return price, err
+	return price, nil
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of meters (int)
-func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
+func (s *CalcService) calculatePrice(_ context.Context, t float64, dist float64) float64 {
+	taxiService, minuteRate, meterRate, minPrice :=
+		s.Config.TaxiServicePrice, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
 	// todo check number types
-	actualPrice := taxiService + t*minuteRate + (dist * kmRate / 1000)
+	actualPrice := taxiService + t*minuteRate + dist*meterRate
+	fmt.Printf(
+		"taxiService ---> %#v, t ---> %#v, minuteRate ---> %#v, dist ---> %#v, kmRate ---> %#v\n",
+		taxiService, t, minuteRate, dist, meterRate,
+	)
+	fmt.Printf("dist * kmRate / 1000 ---> %#v\n", (dist*meterRate)/1000)
+	fmt.Printf("actualPrice ---> %#v, minPrice ---> %#v\n", actualPrice, minPrice)
 	if minPrice >= actualPrice {
 		return minPrice
 	}
@@ -51,22 +68,22 @@ func (s *CalcService) calculatePrice(ctx context.Context, t int, dist int) int {
 }
 
 // tripMetrics is a temporary stub method until API2 realization
-func (*CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (int, int, error) {
+func (s *CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (float64, float64, error) {
 	client := &http.Client{}
 	body, err := json.Marshal(message.Request())
 	if err != nil {
-		log.Println("Errored while marshalling")
+		log.Printf("Errored while marshalling: %s\n", err)
 		return 0, 0, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", apiUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.Config.ApiUrl, bytes.NewBuffer(body))
 	if err != nil {
-		log.Println("Errored when create request to the server")
+		log.Printf("Errored when create request to the server: %s\n", err)
 		return 0, 0, err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("Errored when sending request to the server")
+		log.Printf("Errored when sending request to the server: %s\n", err)
 		return 0, 0, err
 	}
 	defer resp.Body.Close()
@@ -78,12 +95,20 @@ func (*CalcService) tripMetrics(ctx context.Context, message BusinessMessage) (i
 		return 0, 0, err
 	}
 	// todo check service response struct error
+	err = checkORSResponse(metrics)
+	if err != nil {
+		return 0, 0, err
+	}
 	// todo multiple points case
 	duration := metrics.Duration
 	dist := metrics.Distance
 	return duration, dist, nil
 }
 
-// todo ?
-// ServiceMiddleware is a chainable behaviour modifier for Service
-type ServiceMiddleware func(Service) Service
+func checkORSResponse(metrics BusinessResponse) error {
+	if metrics.Err != "" {
+		log.Printf("ErrNoStructureProperty: %#v\n", metrics)
+		return errors.New("remote service inner error happened")
+	}
+	return nil
+}
