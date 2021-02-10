@@ -1,0 +1,29 @@
+FROM golang:alpine as builder
+
+# Enable go modules
+ENV GO111MODULES=on
+
+RUN apk update && apk add --no-cache git
+
+WORKDIR /app
+
+COPY go.mod .
+COPY go.sum .
+
+# Download all dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/main requester/cmd/main.go
+
+# Start a new stage from scratch
+FROM scratch
+
+# Copy the pre-built binary file
+COPY --from=builder /app/bin/main .
+COPY --from=builder /app/requester/config /requester/.
+
+# Run executable
+CMD ["./main"]

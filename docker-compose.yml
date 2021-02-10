@@ -1,0 +1,42 @@
+version: '3'
+services:
+  calc:
+    container_name: taxi_api
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.calc
+    ports:
+      - "9090:9090"
+    restart: on-failure
+    environment:
+      PORT: 9090
+      DB_CONN: ""
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    links:
+      - db
+      - requester
+  db:
+    image: "postgres:latest"
+    container_name: "taxi_db"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "taxi_db"
+  requester:
+    container_name: taxi_requester
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.requester
+    ports:
+      - "9091:9091"
+    restart: on-failure
+    environment:
+      PORT: 9091
+      DB_CONN: ""
+    volumes:
+      - .:/app
