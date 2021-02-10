@@ -38,5 +38,7 @@ services:
     environment:
       PORT: 9091
       DB_CONN: ""
+      TAXI_ORS_TOKEN: !!! insert token here !!!
+      TAXI_BING_TOKEN: !!! insert token here !!!
     volumes:
       - .:/app

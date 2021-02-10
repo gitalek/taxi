@@ -35,5 +35,6 @@ func InitMapsConfig() types.MapsConfig {
 	bingToken := viper.GetString("bing_token")
 	maps["ors"] = types.MapConfig{Url: orsUrl, Token: orsToken}
 	maps["bing"] = types.MapConfig{Url: bingUrl, Token: bingToken}
+	log.Printf("config ---> %#v\n", maps)
 	return maps
 }

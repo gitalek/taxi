@@ -4,6 +4,7 @@ FROM golang:alpine as builder
 ENV GO111MODULES=on
 
 RUN apk update && apk add --no-cache git
+RUN apk add -U --no-cache ca-certificates
 
 WORKDIR /app
 
@@ -23,7 +24,8 @@ FROM scratch
 
 # Copy the pre-built binary file
 COPY --from=builder /app/bin/main .
-COPY --from=builder /app/requester/config /requester/.
+COPY --from=builder /app/requester/config ./requester/config
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Run executable
 CMD ["./main"]

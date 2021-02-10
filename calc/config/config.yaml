@@ -4,4 +4,4 @@ taxiServicePrice: 50
 minPrice: 150
 minuteRate: 10
 meterRate: 0.02
-apiUrl: "http://localhost:9091/tripmetrics"
+apiUrl: "http://requester:9091/tripmetrics"
