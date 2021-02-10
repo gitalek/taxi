@@ -24,12 +24,14 @@ type AppLoggingMiddleware struct {
 
 var _ Service = &AppLoggingMiddleware{}
 
-func (mv AppLoggingMiddleware) Price(ctx context.Context, c []Point, strategy int) (float64, error) {
+func (mv AppLoggingMiddleware) Price(ctx context.Context, c []Point, strategy int, rate string) (float64, error) {
 	mv.Logger.Infow(
 		"",
 		"method", "Price",
 		"params: c", c,
+		"strategy", strategy,
+		"rate", rate,
 	)
-	return mv.Next.Price(ctx, c, strategy)
+	return mv.Next.Price(ctx, c, strategy, rate)
 }
 

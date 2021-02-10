@@ -7,17 +7,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net/http"
 )
 
 // service as an interface
 type Service interface {
-	Price(context.Context, []Point, int) (float64, error)
+	Price(context.Context, []Point, int, string) (float64, error)
 }
 
 type ServiceConfig struct {
 	ApiUrl           string
+	TaxiServicePrice float64
+	MinPrice         float64
+	MinuteRate       float64
+	MeterRate        float64
+	DB               *pgxpool.Pool
+}
+
+type Rate struct {
 	TaxiServicePrice float64
 	MinPrice         float64
 	MinuteRate       float64
@@ -37,32 +46,38 @@ func NewCalcService(config ServiceConfig) *CalcService {
 // check interface realization
 var _ Service = &CalcService{}
 
-func (s CalcService) Price(ctx context.Context, c []Point, strategy int) (float64, error) {
-	message := BusinessMessage{Coordinates: c, Strategy: strategy}
+func (s CalcService) Price(ctx context.Context, c []Point, strategy int, rateName string) (float64, error) {
+	message := BusinessMessage{Coordinates: c, Strategy: strategy, Rate: rateName}
 	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
 		return 0, err
 	}
+
+	rate := &Rate{}
+	err = s.Config.DB.QueryRow(context.Background(), "SELECT taxi_service, min_price, minute_rate, meter_rate FROM rates WHERE name=$1 LIMIT 1;", rateName).
+		Scan(&rate.TaxiServicePrice, &rate.MinPrice, &rate.MinuteRate, &rate.MeterRate)
+	if err != nil {
+		return 0, err
+	}
+
 	// format float?
-	price := s.calculatePrice(ctx, t, d)
+	price := s.calculatePrice(ctx, t, d, rate)
 	return price, nil
 }
 
 // CalculatePrice calculate a price of the trip in rubles (int);
 // params: t - number of minutes (int), dist - number of meters (int)
-func (s *CalcService) calculatePrice(_ context.Context, t float64, dist float64) float64 {
-	taxiService, minuteRate, meterRate, minPrice :=
-		s.Config.TaxiServicePrice, s.Config.MinuteRate, s.Config.MeterRate, s.Config.MinPrice
+func (s *CalcService) calculatePrice(_ context.Context, t float64, dist float64, rate *Rate) float64 {
 	// todo check number types
-	actualPrice := taxiService + t*minuteRate + dist*meterRate
+	actualPrice := rate.TaxiServicePrice + t*rate.MinuteRate + dist*rate.MeterRate
 	fmt.Printf(
 		"taxiService ---> %#v, t ---> %#v, minuteRate ---> %#v, dist ---> %#v, kmRate ---> %#v\n",
-		taxiService, t, minuteRate, dist, meterRate,
+		rate.TaxiServicePrice, t, rate.MinuteRate, dist, rate.MeterRate,
 	)
-	fmt.Printf("dist * kmRate / 1000 ---> %#v\n", (dist*meterRate)/1000)
-	fmt.Printf("actualPrice ---> %#v, minPrice ---> %#v\n", actualPrice, minPrice)
-	if minPrice >= actualPrice {
-		return minPrice
+	fmt.Printf("dist * kmRate / 1000 ---> %#v\n", (dist*rate.MeterRate)/1000)
+	fmt.Printf("actualPrice ---> %#v, minPrice ---> %#v\n", actualPrice, rate.MinPrice)
+	if rate.MinPrice >= actualPrice {
+		return rate.MinPrice
 	}
 	return actualPrice
 }
