@@ -47,6 +47,10 @@ func NewCalcService(config ServiceConfig) *CalcService {
 var _ Service = &CalcService{}
 
 func (s CalcService) Price(ctx context.Context, c []Point, strategy int, rateName string) (float64, error) {
+	//todo: hardcode
+	if (rateName != "economy") && (rateName != "business") {
+		rateName = "economy"
+	}
 	message := BusinessMessage{Coordinates: c, Strategy: strategy, Rate: rateName}
 	t, d, err := s.tripMetrics(ctx, message)
 	if err != nil {
