@@ -1,2 +1,4 @@
 /temp/
 /docker-compose.yml
+/dockerfiles/pg.env
+/dockerfiles/requester.env
