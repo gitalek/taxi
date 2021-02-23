@@ -6,6 +6,7 @@ import (
 	calc "github.com/gitalek/taxi/calc/pkg"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -30,6 +31,7 @@ type AppConfig struct {
 	MinPrice         float64
 	MinuteRate       float64
 	MeterRate        float64
+	DB               *pgxpool.Pool
 }
 
 // todo почему нельзя *App ?
@@ -45,6 +47,7 @@ func (a calcApp) Run() error {
 		MinPrice:         a.config.MinPrice,
 		MinuteRate:       a.config.MinuteRate,
 		MeterRate:        a.config.MeterRate,
+		DB:               a.config.DB,
 	}
 	svc = calc.NewCalcService(serviceConfig)
 	sugar := zap.NewExample().Sugar().With("app", "calc")

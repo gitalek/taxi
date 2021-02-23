@@ -14,5 +14,12 @@ $ {"price":23080}
 
 ```sh
 $ curl -X POST localhost:9090/v2/calcprice -d '{"coordinates":[{"lat":8.681495,"lon":49.41461},{"lat":9.686507,"lon":49.41843}]}'
-$ {"price":2692660}
+$ curl -X POST localhost:9090/v2/calcprice -d '{"coordinates":[{"lat":49.41461,"lon":8.681495},{"lat":49.420318,"lon":9.687872}], "strategy":1, "rate":"business"}';
+$ {"price":9280.345000000001}
+```
+
+# DB migrations (goose)
+
+```sh
+$ GOOSE_DRIVER=postgres GOOSE_DBSTRING="user=user password=password dbname=taxi_db sslmode=disable host=localhost port=54320" goose status
 ```

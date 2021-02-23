@@ -1,1 +1,5 @@
 /temp/
+/docker-compose.yml
+/dockerfiles/pg.env
+/dockerfiles/requester.env
+/dockerfiles/calc.env
